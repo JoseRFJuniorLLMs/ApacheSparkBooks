@@ -1,0 +1,54 @@
+myRDD = sc.textFile('/home/jr/Documents/spark/airport-codes-na.txt').map(lambda line: line.split("\t"))
+
+airports = sc.textFile('/home/jr/Documents/spark/airport-codes-na.txt').map(lambda line: line.split("\t"))
+
+myRDD = sc.textFile('/home/jr/Documents/spark/airport-codes-na.txt', minPartitions=4, use_unicode=True).map(lambda line: line.split("\t"))
+
+myRDD = sc.textFile('/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/departuredelays.csv').map(lambda line: line.split(","))
+
+airports.filter(lambda c: c[1] == "WA").map(lambda c: (c[0], c[1])).flatMap(lambda x: x).take(10)
+airports.map(lambda c: (c[0], c[1])).filter(lambda c: c[1] == "WA").take(5)
+airports.map(lambda c: c[2]).distinct().take(5)
+flights.map(lambda c: c[3]).sample(False, 0.001, 123).take(5)
+
+airports.saveAsTextFile("/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/airportsXD")
+%fs ls /home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/airportsXD/
+
+flights = sc.textFile('/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/departuredelays.csv')\
+  .map(lambda line: line.split(","))\
+  .zipWithIndex()\
+  .filter(lambda (row, idx): idx > 0)\
+  .map(lambda (row, idx): row)\
+
+flightsDF = spark.read.options(header='true', inferSchema='true').csv('/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/departuredelays.csv')
+flightsDF.createOrReplaceTempView("flightsDF")
+
+## Getting Ready
+flights = sc.textFile('/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/departuredelays.csv', minPartitions=8)\
+  .map(lambda line: line.split(","))\
+  .zipWithIndex()\
+  .filter(lambda (row, idx): idx > 0)\
+  .map(lambda (row, idx): row)
+
+myRDD.count()
+
+myRDD.take(5)
+
+myRDD.getNumPartitions()
+
+myDF = spark.read.csv('/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/departuredelays.csv', header=True, inferSchema=True)
+
+myDF.count()
+
+myDF.show()
+
+myDF.rdd.getNumPartitions()
+
+myDF.printSchema()
+
+airports = sc.textFile('/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/departuredelays.csv').map(lambda line: line.split("\t"))
+
+airports.take(5)
+
+flights = sc.textFile('/home/jr/Documents/spark/learningPySpark/Chapter03/flight-data/departuredelays.csv').map(lambda line: line.split(","))
+flights.take(5)
