@@ -1,0 +1,77 @@
+== [[FileFormatWriter]] FileFormatWriter Helper Object
+
+`FileFormatWriter` is a Scala object that allows for <<write, writing the result of a structured query>>.
+
+[[logging]]
+[TIP]
+====
+Enable `ERROR`, `INFO`, `DEBUG` logging level for `org.apache.spark.sql.execution.datasources.FileFormatWriter` logger to see what happens inside.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.sql.execution.datasources.FileFormatWriter=INFO
+```
+
+Refer to link:spark-logging.adoc[Logging].
+====
+
+=== [[write]] Writing Result of Structured Query (Query Result) -- `write` Method
+
+[source, scala]
+----
+write(
+  sparkSession: SparkSession,
+  plan: SparkPlan,
+  fileFormat: FileFormat,
+  committer: FileCommitProtocol,
+  outputSpec: OutputSpec,
+  hadoopConf: Configuration,
+  partitionColumns: Seq[Attribute],
+  bucketSpec: Option[BucketSpec],
+  statsTrackers: Seq[WriteJobStatsTracker],
+  options: Map[String, String]): Set[String]
+----
+
+`write`...FIXME
+
+[NOTE]
+====
+`write` is used when:
+
+* `SaveAsHiveFile` is requested to <<spark-sql-LogicalPlan-SaveAsHiveFile.adoc#saveAsHiveFile, saveAsHiveFile>> (when <<spark-sql-LogicalPlan-InsertIntoHiveDirCommand.adoc#, InsertIntoHiveDirCommand>> and <<spark-sql-LogicalPlan-InsertIntoHiveTable.adoc#, InsertIntoHiveTable>> logical commands are executed)
+
+* <<spark-sql-LogicalPlan-InsertIntoHadoopFsRelationCommand.adoc#, InsertIntoHadoopFsRelationCommand>> logical command is executed
+
+* Structured Streaming's `FileStreamSink` is requested to add a streaming batch (`addBatch`)
+====
+
+=== [[executeTask]] `executeTask` Internal Method
+
+[source, scala]
+----
+executeTask(
+  description: WriteJobDescription,
+  sparkStageId: Int,
+  sparkPartitionId: Int,
+  sparkAttemptNumber: Int,
+  committer: FileCommitProtocol,
+  iterator: Iterator[InternalRow]): WriteTaskResult
+----
+
+`executeTask`...FIXME
+
+NOTE: `executeTask` is used exclusively when `FileFormatWriter` is requested to <<write, write the result of a structured query>>.
+
+=== [[processStats]] `processStats` Internal Method
+
+[source, scala]
+----
+processStats(
+  statsTrackers: Seq[WriteJobStatsTracker],
+  statsPerTask: Seq[Seq[WriteTaskStats]]): Unit
+----
+
+`processStats`...FIXME
+
+NOTE: `processStats` is used exclusively when `FileFormatWriter` is requested to <<write, write the result of a structured query>>.

@@ -1,0 +1,14 @@
+{
+    "structure": {
+        "readme": "book-intro.adoc"
+    },
+    "plugins": ["ga"],
+    "pluginsConfig": {
+        "ga": {
+            "token": "UA-86782445-5"
+        }
+    },
+    "variables": {
+      "kafka_version": "2.3.0"
+    }
+}

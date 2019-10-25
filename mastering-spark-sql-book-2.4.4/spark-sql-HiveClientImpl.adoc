@@ -1,0 +1,205 @@
+== [[HiveClientImpl]] HiveClientImpl -- The One and Only HiveClient
+
+`HiveClientImpl` is the only available link:spark-sql-HiveClient.adoc[HiveClient] in Spark SQL that does/uses...FIXME
+
+`HiveClientImpl` is <<creating-instance, created>> exclusively when `IsolatedClientLoader` is requested to link:spark-sql-HiveUtils.adoc#newClientForMetadata[create a new Hive client]. When created, `HiveClientImpl` is given the location of the default database for the Hive metastore warehouse (i.e. <<warehouseDir, warehouseDir>> that is the value of link:spark-sql-hive-metastore.adoc#hive.metastore.warehouse.dir[hive.metastore.warehouse.dir] Hive-specific Hadoop configuration property).
+
+NOTE: The location of the default database for the Hive metastore warehouse is `/user/hive/warehouse` by default.
+
+NOTE: You may be interested in https://issues.apache.org/jira/browse/SPARK-19664[SPARK-19664 put 'hive.metastore.warehouse.dir' in hadoopConf place] if you use Spark before 2.1 (which you should not really as it is not supported anymore).
+
+NOTE: The Hadoop configuration is what link:spark-sql-HiveExternalCatalog.adoc#creating-instance[HiveExternalCatalog] was given when created (which is the default Hadoop configuration from Spark Core's `SparkContext.hadoopConfiguration` with the Spark properties with `spark.hadoop` prefix).
+
+[[logging]]
+[TIP]
+====
+Enable `DEBUG` logging level for `org.apache.spark.sql.hive.client.HiveClientImpl` logger to see what happens inside.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.sql.hive.client.HiveClientImpl=DEBUG
+```
+
+Refer to link:spark-logging.adoc[Logging].
+====
+
+=== [[renamePartitions]] `renamePartitions` Method
+
+[source, scala]
+----
+renamePartitions(
+  db: String,
+  table: String,
+  specs: Seq[TablePartitionSpec],
+  newSpecs: Seq[TablePartitionSpec]): Unit
+----
+
+NOTE: `renamePartitions` is part of link:spark-sql-HiveClient.adoc#renamePartitions[HiveClient Contract] to...FIXME.
+
+`renamePartitions`...FIXME
+
+=== [[alterPartitions]] `alterPartitions` Method
+
+[source, scala]
+----
+alterPartitions(
+  db: String,
+  table: String,
+  newParts: Seq[CatalogTablePartition]): Unit
+----
+
+NOTE: `alterPartitions` is part of link:spark-sql-HiveClient.adoc#alterPartitions[HiveClient Contract] to...FIXME.
+
+`alterPartitions`...FIXME
+
+=== [[client]] `client` Internal Method
+
+[source, scala]
+----
+client: Hive
+----
+
+`client`...FIXME
+
+NOTE: `client` is used...FIXME
+
+=== [[getPartitions]] `getPartitions` Method
+
+[source, scala]
+----
+getPartitions(
+  table: CatalogTable,
+  spec: Option[TablePartitionSpec]): Seq[CatalogTablePartition]
+----
+
+NOTE: `getPartitions` is part of link:spark-sql-HiveClient.adoc#getPartitions[HiveClient Contract] to...FIXME.
+
+`getPartitions`...FIXME
+
+=== [[getPartitionsByFilter]] `getPartitionsByFilter` Method
+
+[source, scala]
+----
+getPartitionsByFilter(
+  table: CatalogTable,
+  predicates: Seq[Expression]): Seq[CatalogTablePartition]
+----
+
+NOTE: `getPartitionsByFilter` is part of link:spark-sql-HiveClient.adoc#getPartitionsByFilter[HiveClient Contract] to...FIXME.
+
+`getPartitionsByFilter`...FIXME
+
+=== [[getPartitionOption]] `getPartitionOption` Method
+
+[source, scala]
+----
+getPartitionOption(
+  table: CatalogTable,
+  spec: TablePartitionSpec): Option[CatalogTablePartition]
+----
+
+NOTE: `getPartitionOption` is part of link:spark-sql-HiveClient.adoc#getPartitionOption[HiveClient Contract] to...FIXME.
+
+`getPartitionOption`...FIXME
+
+=== [[creating-instance]] Creating HiveClientImpl Instance
+
+`HiveClientImpl` takes the following when created:
+
+* [[version]] `HiveVersion`
+* [[warehouseDir]] Location of the default database for the Hive metastore warehouse if defined (aka `warehouseDir`)
+* [[sparkConf]] `SparkConf`
+* [[hadoopConf]] Hadoop configuration
+* [[extraConfig]] Extra configuration
+* [[initClassLoader]] Initial `ClassLoader`
+* [[clientLoader]] `IsolatedClientLoader`
+
+`HiveClientImpl` initializes the <<internal-registries, internal registries and counters>>.
+
+=== [[getTableOption]] Retrieving Table Metadata If Available -- `getTableOption` Method
+
+[source, scala]
+----
+def getTableOption(dbName: String, tableName: String): Option[CatalogTable]
+----
+
+NOTE: `getTableOption` is part of link:spark-sql-HiveClient.adoc#getTableOption[HiveClient Contract] to...FIXME.
+
+When executed, `getTableOption` prints out the following DEBUG message to the logs:
+
+```
+Looking up [dbName].[tableName]
+```
+
+`getTableOption` requests <<client, Hive client>> to retrieve the metadata of the table and creates a link:spark-sql-CatalogTable.adoc#creating-instance[CatalogTable].
+
+=== [[readHiveStats]] Creating Table Statistics from Hive's Table or Partition Parameters -- `readHiveStats` Internal Method
+
+[source, scala]
+----
+readHiveStats(properties: Map[String, String]): Option[CatalogStatistics]
+----
+
+`readHiveStats` creates a link:spark-sql-CatalogStatistics.adoc#creating-instance[CatalogStatistics] from the input Hive table or partition parameters (if available and greater than 0).
+
+.Table Statistics and Hive Parameters
+[cols="1,2",options="header",width="100%"]
+|===
+| Hive Parameter
+| Table Statistics
+
+| `totalSize`
+| link:spark-sql-CatalogStatistics.adoc#sizeInBytes[sizeInBytes]
+
+| `rawDataSize`
+| link:spark-sql-CatalogStatistics.adoc#sizeInBytes[sizeInBytes]
+
+| `numRows`
+| link:spark-sql-CatalogStatistics.adoc#rowCount[rowCount]
+|===
+
+NOTE: `totalSize` Hive parameter has a higher precedence over `rawDataSize` for link:spark-sql-CatalogStatistics.adoc#sizeInBytes[sizeInBytes] table statistic.
+
+NOTE: `readHiveStats` is used when `HiveClientImpl` is requested for the metadata of a <<getTableOption, table>> or <<fromHivePartition, table partition>>.
+
+=== [[fromHivePartition]] Retrieving Table Partition Metadata (Converting Table Partition Metadata from Hive Format to Spark SQL Format) -- `fromHivePartition` Method
+
+[source, scala]
+----
+fromHivePartition(hp: HivePartition): CatalogTablePartition
+----
+
+`fromHivePartition` simply creates a link:spark-sql-CatalogTablePartition.adoc#creating-instance[CatalogTablePartition] with the following:
+
+* link:spark-sql-CatalogTablePartition.adoc#spec[spec] from Hive's link:++http://hive.apache.org/javadocs/r2.3.2/api/org/apache/hadoop/hive/ql/metadata/Partition.html#getSpec--++[Partition.getSpec] if available
+
+* link:spark-sql-CatalogTablePartition.adoc#storage[storage] from Hive's http://hive.apache.org/javadocs/r2.3.2/api/org/apache/hadoop/hive/metastore/api/StorageDescriptor.html[StorageDescriptor] of the table partition
+
+* link:spark-sql-CatalogTablePartition.adoc#parameters[parameters] from Hive's link:++http://hive.apache.org/javadocs/r2.3.2/api/org/apache/hadoop/hive/ql/metadata/Partition.html#getParameters--++[Partition.getParameters] if available
+
+* link:spark-sql-CatalogTablePartition.adoc#stats[stats] from Hive's link:++http://hive.apache.org/javadocs/r2.3.2/api/org/apache/hadoop/hive/ql/metadata/Partition.html#getParameters--++[Partition.getParameters] if available and <<readHiveStats, converted to table statistics format>>
+
+NOTE: `fromHivePartition` is used when `HiveClientImpl` is requested for <<getPartitionOption, getPartitionOption>>, <<getPartitions, getPartitions>> and <<getPartitionsByFilter, getPartitionsByFilter>>.
+
+=== [[toHiveTable]] Converting Native Table Metadata to Hive's Table -- `toHiveTable` Method
+
+[source, scala]
+----
+toHiveTable(table: CatalogTable, userName: Option[String] = None): HiveTable
+----
+
+`toHiveTable` simply creates a new Hive `Table` and copies the properties from the input <<spark-sql-CatalogTable.adoc#, CatalogTable>>.
+
+[NOTE]
+====
+`toHiveTable` is used when:
+
+* `HiveUtils` is requested to <<spark-sql-HiveUtils.adoc#inferSchema, inferSchema>>
+
+* `HiveClientImpl` is requested to <<createTable, createTable>>, <<alterTable, alterTable>>, <<renamePartitions, renamePartitions>>, <<alterPartitions, alterPartitions>>, <<getPartitionOption, getPartitionOption>>, <<getPartitions, getPartitions>> and <<getPartitionsByFilter, getPartitionsByFilter>>
+
+* `HiveTableScanExec` physical operator is requested for the <<hiveQlTable, hiveQlTable>>
+
+* <<spark-sql-LogicalPlan-InsertIntoHiveDirCommand.adoc#, InsertIntoHiveDirCommand>> and <<spark-sql-LogicalPlan-InsertIntoHiveTable.adoc#, InsertIntoHiveTable>> logical commands are executed
+====

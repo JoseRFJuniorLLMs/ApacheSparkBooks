@@ -1,0 +1,131 @@
+== [[RecordCollector]] RecordCollector Contract
+
+`RecordCollector` is the <<contract, contract>> of <<implementations, record collectors>> that can <<send, send a record to a topic>>.
+
+[[contract]]
+.RecordCollector Contract
+[cols="1m,3",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| close
+a| [[close]]
+
+[source, java]
+----
+void close()
+----
+
+Closes the `RecordCollector`
+
+Used when...FIXME
+
+| flush
+a| [[flush]]
+
+[source, java]
+----
+void flush()
+----
+
+Flushes the `RecordCollector` (and the internal Kafka producer)
+
+Used exclusively when `StreamTask` is requested to <<kafka-streams-internals-StreamTask.adoc#flushState, flush state stores and the internal Kafka producer>>
+
+| init
+a| [[init]]
+
+[source, java]
+----
+void init(
+  Producer<byte[], byte[]> producer)
+----
+
+Initializes the `RecordCollector` (with a Kafka https://kafka.apache.org/23/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html[Producer])
+
+Used when `StreamTask` is <<kafka-streams-internals-StreamTask.adoc#, created>> and <<kafka-streams-internals-StreamTask.adoc#resume, resumed>>
+
+| offsets
+a| [[offsets]]
+
+[source, java]
+----
+Map<TopicPartition, Long> offsets()
+----
+
+Used exclusively when `StreamTask` is requested to <<kafka-streams-internals-StreamTask.adoc#activeTaskCheckpointableOffsets, activeTaskCheckpointableOffsets>>
+
+| send
+a| [[send]]
+
+[source, java]
+----
+<K, V> void send(
+  String topic,
+  K key,
+  V value,
+  Headers headers,
+  Integer partition,
+  Long timestamp,
+  Serializer<K> keySerializer,
+  Serializer<V> valueSerializer)
+<K, V> void send(
+  String topic,
+  K key,
+  V value,
+  Headers headers,
+  Long timestamp,
+  Serializer<K> keySerializer,
+  Serializer<V> valueSerializer,
+  StreamPartitioner<? super K, ? super V> partitioner)
+----
+
+Sends a record to a topic
+
+Used when:
+
+* `RecordCollectorImpl` is requested to <<kafka-streams-internals-RecordCollectorImpl.adoc#send, send a record>>
+
+* `InMemoryTimeOrderedKeyValueBuffer` is requested to `flush`
+
+* `StoreChangeLogger` is requested to <<kafka-streams-internals-StoreChangeLogger.adoc#logChange, logChange>>
+
+* `SinkNode` is requested to <<kafka-streams-internals-SinkNode.adoc#process, process a record>>
+
+|===
+
+[[implementations]]
+.RecordCollectors
+[cols="30m,70",options="header",width="100%"]
+|===
+| RecordCollector
+| Description
+
+| <<kafka-streams-internals-StandbyContextImpl.adoc#NO_OP_COLLECTOR, NO_OP_COLLECTOR>>
+| [[NO_OP_COLLECTOR]]
+
+| <<kafka-streams-internals-RecordCollectorImpl.adoc#, RecordCollectorImpl>>
+| [[RecordCollectorImpl]]
+
+|===
+
+=== [[Supplier]][[recordCollector]] Supplier Contract and `recordCollector` Method
+
+`RecordCollector` defines a `Supplier` that is used to access the <<kafka-streams-internals-RecordCollector.adoc#, RecordCollector>>.
+
+[source, java]
+----
+RecordCollector recordCollector()
+----
+
+[NOTE]
+====
+`recordCollector` is used when:
+
+* `SinkNode` is requested to <<kafka-streams-internals-SinkNode.adoc#process, process a record>>
+
+* `InMemoryTimeOrderedKeyValueBuffer` is requested to <<kafka-streams-internals-InMemoryTimeOrderedKeyValueBuffer.adoc#init, initialize>>
+
+* StoreChangeLogger is <<kafka-streams-internals-StoreChangeLogger.adoc#, created>>
+====

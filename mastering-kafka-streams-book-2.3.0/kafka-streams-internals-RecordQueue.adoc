@@ -1,0 +1,138 @@
+== [[RecordQueue]] RecordQueue -- FIFO Queue of Buffered Stamped Records
+
+`RecordQueue` is a <<fifoQueue, FIFO queue of StampedRecords>> from a <<partition, Kafka partition>> (associated with a <<source, SourceNode>>).
+
+`RecordQueue` is <<creating-instance, created>> along with a <<kafka-streams-internals-StreamTask.adoc#, StreamTask>> exclusively (for every <<kafka-streams-internals-StreamTask.adoc#partitions, partition assigned>>).
+
+.RecordQueue, StreamTask and TaskCreator
+image::images/kafka-streams-RecordQueue.png[align="center"]
+
+`RecordQueue` acts as a buffer of Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html[ConsumerRecords].
+
+NOTE: `StreamTask` uses a <<kafka-streams-internals-PartitionGroup.adoc#, PartitionGroup>> to manage the `RecordQueues` per partition assigned.
+
+[[UNKNOWN]]
+`RecordQueue` defines the *UNKNOWN* constant to be `ConsumerRecord.NO_TIMESTAMP`.
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.kafka.streams.processor.internals.RecordQueue` logger to see what happens inside.
+
+Add the following line to `log4j.properties`:
+
+```
+log4j.logger.org.apache.kafka.streams.processor.internals.RecordQueue=ALL
+```
+
+Refer to <<kafka-logging.adoc#log4j.properties, Application Logging Using log4j>>.
+====
+
+=== [[creating-instance]] Creating RecordQueue Instance
+
+`RecordQueue` takes the following to be created:
+
+* [[partition]] Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/common/TopicPartition.html[TopicPartition]
+* [[source]] <<kafka-streams-internals-SourceNode.adoc#, SourceNode>>
+* [[timestampExtractor]] <<kafka-streams-TimestampExtractor.adoc#, TimestampExtractor>>
+* [[deserializationExceptionHandler]] `DeserializationExceptionHandler`
+* [[processorContext]] <<kafka-streams-internals-InternalProcessorContext.adoc#, InternalProcessorContext>>
+* [[logContext]] `LogContext`
+
+`RecordQueue` initializes the <<internal-properties, internal properties>>.
+
+=== [[addRawRecords]] Adding Kafka ConsumerRecords (as StampedRecords) -- `addRawRecords` Method
+
+[source, java]
+----
+int addRawRecords(final Iterable<ConsumerRecord<byte[], byte[]>> rawRecords)
+----
+
+For every Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html[ConsumerRecord] in the input `rawRecords`, `addRawRecords` does the following:
+
+. Requests the <<recordDeserializer, RecordDeserializer>> to link:kafka-streams-internals-RecordDeserializer.adoc#deserialize[deserialize the record] (with the <<processorContext, ProcessorContext>>)
+
+. FIXME
+
+. Creates a link:kafka-streams-internals-StampedRecord.adoc#creating-instance[StampedRecord] for the record and the record timestamp
+
+. Inserts the `StampedRecord` at the end of the <<fifoQueue, fifoQueue>>
+
+. FIXME
+
+While processing `ConsumerRecords`, `addRawRecords` prints out the following TRACE message to the logs:
+
+```
+Source node [name] extracted timestamp [timestamp] for record [record]
+```
+
+With all `ConsumerRecords` processed, `addRawRecords`...FIXME
+
+In the end, `addRawRecords` returns the <<size, number of ConsumerRecords>> in the <<fifoQueue, queue>>.
+
+[NOTE]
+====
+`addRawRecords` skips (drops) Kafka `ConsumerRecords` when either condition holds:
+
+* <<recordDeserializer, RecordDeserializer>> could not link:kafka-streams-internals-RecordDeserializer.adoc#deserialize[deserialize] and the `DeserializationExceptionHandler` is not set to fail upon a deserialization error
+
+* Extracted timestamp is negative (and hence invalid)
+====
+
+NOTE: `addRawRecords` is used exclusively when `PartitionGroup` is requested to link:kafka-streams-internals-PartitionGroup.adoc#addRawRecords[add records to a RecordQueue for a Kafka partition].
+
+=== [[clear]] Clearing (Resetting) RecordQueue -- `clear` Method
+
+[source, java]
+----
+void clear()
+----
+
+`clear`...FIXME
+
+In the end, `clear` (re)sets the <<partitionTime, partitionTime>> to `NOT_KNOWN`.
+
+NOTE: `clear` is used exclusively when `PartitionGroup` is requested to link:kafka-streams-internals-PartitionGroup.adoc#clear[clear].
+
+=== [[size]] Requesting Number of Records in Queue -- `size` Method
+
+[source, java]
+----
+int size()
+----
+
+`size` simply returns the number of records in the <<fifoQueue, fifoQueue>>.
+
+[NOTE]
+====
+`size` is used when:
+
+* `PartitionGroup` is requested to link:kafka-streams-internals-PartitionGroup.adoc#addRawRecords[add records to a RecordQueue for a Kafka partition] and link:kafka-streams-internals-PartitionGroup.adoc#numBuffered[numBuffered]
+
+* `RecordQueue` is requested to <<addRawRecords, add Kafka ConsumerRecords (as StampedRecords)>>
+
+* `StreamTask` is requested to link:kafka-streams-internals-StreamTask.adoc#process[process a single record]
+====
+
+=== [[internal-properties]] Internal Properties
+
+.RecordQueue's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| fifoQueue
+| [[fifoQueue]] Java's https://docs.oracle.com/javase/8/docs/api/index.html?java/util/ArrayDeque.html[java.util.ArrayDeque] of link:kafka-streams-internals-StampedRecord.adoc[StampedRecords] (i.e. orderable Kafka `ConsumerRecords` with a timestamp)
+
+Used when...FIXME
+
+| partitionTime
+a| [[partitionTime]][[timestamp]]
+
+| recordDeserializer
+| [[recordDeserializer]] link:kafka-streams-internals-RecordDeserializer.adoc[RecordDeserializer] (for the <<source, SourceNode>> and <<deserializationExceptionHandler, DeserializationExceptionHandler>>)
+
+Used when...FIXME
+
+|===

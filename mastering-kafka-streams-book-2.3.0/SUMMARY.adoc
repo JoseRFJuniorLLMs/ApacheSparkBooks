@@ -1,0 +1,442 @@
+= Summary
+
+. link:book-intro.adoc[Introduction]
+
+. link:kafka-streams.adoc[Kafka Streams -- Stream Processing Library on Apache Kafka]
+. link:kafka-streams-why.adoc[Why Kafka Streams]
+
+. link:kafka-streams-multi-instance-kafka-streams-application.adoc[Multi-Instance Kafka Streams Applications]
+
+. link:kafka-streams-exactly-once-support-eos.adoc[Exactly-Once Support (EOS)]
+. link:kafka-streams-StreamThreads-StreamTasks-and-StandbyTasks.adoc[KafkaStreams, StreamThreads, StreamTasks and StandbyTasks]
+
+== Demos
+
+. link:kafka-streams-demo-creating-topology-with-state-store-logging-enabled.adoc[Creating Topology with State Store with Logging Enabled]
+
+== Stateful Stream Processing
+
+. link:kafka-streams-stateful-stream-processing.adoc[Stateful Stream Processing]
+
+. link:kafka-streams-StateStore.adoc[StateStore]
+.. link:kafka-streams-KeyValueStore.adoc[KeyValueStore]
+.. link:kafka-streams-SessionStore.adoc[SessionStore]
+.. link:kafka-streams-WindowStore.adoc[WindowStore]
+
+. link:kafka-streams-Stores.adoc[Stores]
+
+. link:kafka-streams-Materialized.adoc[Materialized]
+
+. link:kafka-streams-StoreSupplier.adoc[StoreSupplier]
+.. link:kafka-streams-KeyValueBytesStoreSupplier.adoc[KeyValueBytesStoreSupplier]
+.. link:kafka-streams-SessionBytesStoreSupplier.adoc[SessionBytesStoreSupplier]
+.. link:kafka-streams-WindowBytesStoreSupplier.adoc[WindowBytesStoreSupplier]
+
+. link:kafka-streams-StoreBuilder.adoc[StoreBuilder]
+
+. link:kafka-streams-TimestampedKeyValueStore.adoc[TimestampedKeyValueStore]
+. link:kafka-streams-ReadOnlyKeyValueStore.adoc[ReadOnlyKeyValueStore]
+
+== Stream Processing with Kafka Streams
+
+. link:kafka-streams-KafkaStreams.adoc[KafkaStreams]
+. link:kafka-streams-Topology.adoc[Topology]
+. link:kafka-streams-TopologyDescription.adoc[TopologyDescription]
+.. link:kafka-streams-TopologyDescription-Node.adoc[Node]
+.. link:kafka-streams-TopologyDescription-Processor.adoc[Processor]
+.. link:kafka-streams-TopologyDescription-Sink.adoc[Sink]
+.. link:kafka-streams-TopologyDescription-Source.adoc[Source]
+. link:kafka-streams-StreamsConfig.adoc[StreamsConfig]
+. link:kafka-streams-properties.adoc[Configuration Properties]
+. link:kafka-logging.adoc[Logging]
+. link:kafka-streams-KafkaClientSupplier.adoc[KafkaClientSupplier]
+
+== High-Level Streams DSL
+
+. link:kafka-streams-streams-dsl.adoc[High-Level Streams DSL]
+
+. link:kafka-streams-StreamsBuilder.adoc[StreamsBuilder]
+. link:kafka-streams-KStream.adoc[KStream]
+. link:kafka-streams-KTable.adoc[KTable]
+. link:kafka-streams-GlobalKTable.adoc[GlobalKTable]
+
+. link:kafka-streams-KGroupedStream.adoc[KGroupedStream]
+.. link:kafka-streams-SessionWindowedKStream.adoc[SessionWindowedKStream]
+.. link:kafka-streams-TimeWindowedKStream.adoc[TimeWindowedKStream]
+
+. link:kafka-streams-KGroupedTable.adoc[KGroupedTable]
+
+. link:kafka-streams-Consumed.adoc[Consumed]
+. link:kafka-streams-Produced.adoc[Produced]
+. link:kafka-streams-Grouped.adoc[Grouped]
+. link:kafka-streams-Joined.adoc[Joined]
+. link:kafka-streams-Printed.adoc[Printed]
+
+. link:kafka-streams-KeyValueMapper.adoc[KeyValueMapper]
+. link:kafka-streams-ValueJoiner.adoc[ValueJoiner]
+
+. link:kafka-streams-ValueTransformer.adoc[ValueTransformer]
+.. link:kafka-streams-ValueTransformerSupplier.adoc[ValueTransformerSupplier]
+
+. link:kafka-streams-ValueTransformerWithKey.adoc[ValueTransformerWithKey]
+
+. link:kafka-streams-Transformer.adoc[Transformer]
+. link:kafka-streams-TransformerSupplier.adoc[TransformerSupplier]
+
+. link:kafka-streams-Windows.adoc[Windows]
+.. link:kafka-streams-JoinWindows.adoc[JoinWindows]
+.. link:kafka-streams-TimeWindows.adoc[TimeWindows]
+.. link:kafka-streams-UnlimitedWindows.adoc[UnlimitedWindows]
+
+. link:kafka-streams-Window.adoc[Window]
+
+. link:kafka-streams-WindowedSerdes.adoc[WindowedSerdes]
+.. link:kafka-streams-Windowed.adoc[Windowed]
+.. link:kafka-streams-TimeWindowedSerializer.adoc[TimeWindowedSerializer]
+
+. link:kafka-streams-scala.adoc[Scala API for Kafka Streams]
+.. link:kafka-streams-scala-ImplicitConversions.adoc[ImplicitConversions]
+.. link:kafka-streams-scala-Serdes.adoc[Serdes]
+.. link:kafka-streams-scala-Consumed.adoc[Consumed]
+.. link:kafka-streams-scala-Produced.adoc[Produced]
+.. link:kafka-streams-scala-Grouped.adoc[Grouped]
+.. link:kafka-streams-scala-Materialized.adoc[Materialized]
+
+== Low-Level Processor API
+
+. link:kafka-streams-processor-api.adoc[Low-Level Processor API]
+
+. link:kafka-streams-Processor.adoc[Processor Contract -- Stream Processing Node]
+.. link:kafka-streams-AbstractProcessor.adoc[AbstractProcessor -- Base for Stream Processors]
+
+. link:kafka-streams-ProcessorContext.adoc[ProcessorContext]
+.. link:kafka-streams-TaskId.adoc[TaskId]
+.. link:kafka-streams-To.adoc[To]
+
+. link:kafka-streams-Punctuator.adoc[Punctuator Contract -- Scheduled Periodic Actions]
+. link:kafka-streams-Cancellable.adoc[Cancellable]
+
+. link:kafka-streams-ProcessorSupplier.adoc[ProcessorSupplier Contract]
+
+. link:kafka-streams-StreamPartitioner.adoc[StreamPartitioner]
+
+. link:kafka-streams-TopicNameExtractor.adoc[TopicNameExtractor -- Dynamic Routing of Output Records]
+.. link:kafka-streams-RecordContext.adoc[RecordContext -- Record Metadata]
+
+. link:kafka-streams-TimestampExtractor.adoc[TimestampExtractor Contract]
+.. link:kafka-streams-WallclockTimestampExtractor.adoc[WallclockTimestampExtractor]
+.. link:kafka-streams-ExtractRecordMetadataTimestamp.adoc[ExtractRecordMetadataTimestamp]
+.. link:kafka-streams-FailOnInvalidTimestamp.adoc[FailOnInvalidTimestamp]
+
+. link:kafka-streams-PartitionGrouper.adoc[PartitionGrouper Contract]
+.. link:kafka-streams-DefaultPartitionGrouper.adoc[DefaultPartitionGrouper]
+
+. link:kafka-streams-StateRestoreCallback.adoc[StateRestoreCallback]
+.. link:kafka-streams-BatchingStateRestoreCallback.adoc[BatchingStateRestoreCallback]
+
+. link:kafka-streams-StateRestoreListener.adoc[StateRestoreListener]
+.. link:kafka-streams-AbstractNotifyingBatchingRestoreCallback.adoc[AbstractNotifyingBatchingRestoreCallback]
+.. link:kafka-streams-AbstractNotifyingRestoreCallback.adoc[AbstractNotifyingRestoreCallback]
+
+== Monitoring Kafka Streams Applications
+
+. link:kafka-streams-internals-StateListener.adoc[StateListener -- KafkaStreams State Listener]
+. link:kafka-streams-internals-CacheFlushListener.adoc[CacheFlushListener]
+
+. link:kafka-streams-StreamsMetrics.adoc[StreamsMetrics]
+.. link:kafka-streams-internals-StreamsMetricsImpl.adoc[StreamsMetricsImpl]
+.. link:kafka-streams-internals-StreamsMetricsThreadImpl.adoc[StreamsMetricsThreadImpl]
+
+. link:kafka-streams-StreamTask-TaskMetrics.adoc[TaskMetrics]
+
+. link:kafka-streams-internals-StoreChangeLogger.adoc[StoreChangeLogger]
+
+. link:kafka-streams-DelegatingStateRestoreListener.adoc[DelegatingStateRestoreListener]
+
+== Testing
+
+. link:kafka-streams-TopologyTestDriver.adoc[TopologyTestDriver]
+
+== Internals of Kafka Streams
+
+=== Low-Level Stream Processing Graph
+
+. link:kafka-streams-internals-InternalTopologyBuilder.adoc[InternalTopologyBuilder]
+
+. link:kafka-streams-internals-InternalTopologyBuilder-AbstractNode.adoc[AbstractNode]
+.. link:kafka-streams-internals-InternalTopologyBuilder-Processor.adoc[Processor]
+.. link:kafka-streams-internals-InternalTopologyBuilder-Sink.adoc[Sink]
+.. link:kafka-streams-internals-InternalTopologyBuilder-Source.adoc[Source]
+
+. link:kafka-streams-internals-InternalTopologyBuilder-NodeFactory.adoc[NodeFactory]
+.. link:kafka-streams-internals-InternalTopologyBuilder-ProcessorNodeFactory.adoc[ProcessorNodeFactory]
+.. link:kafka-streams-internals-InternalTopologyBuilder-SinkNodeFactory.adoc[SinkNodeFactory]
+.. link:kafka-streams-internals-InternalTopologyBuilder-SourceNodeFactory.adoc[SourceNodeFactory]
+
+. link:kafka-streams-internals-InternalTopologyBuilder-TopologyDescription.adoc[InternalTopologyBuilder.TopologyDescription]
+
+. link:kafka-streams-internals-InternalTopologyBuilder-GlobalStore.adoc[GlobalStore]
+. link:kafka-streams-internals-InternalTopologyBuilder-StateStoreFactory.adoc[StateStoreFactory]
+
+=== High-Level Stream Processing Graph
+
+. link:kafka-streams-internals-InternalStreamsBuilder.adoc[InternalStreamsBuilder]
+
+. link:kafka-streams-internals-StreamsGraphNode.adoc[StreamsGraphNode]
+.. link:kafka-streams-internals-BaseJoinProcessorNode.adoc[BaseJoinProcessorNode]
+.. link:kafka-streams-internals-BaseRepartitionNode.adoc[BaseRepartitionNode]
+
+. link:kafka-streams-internals-ProcessorParameters.adoc[ProcessorParameters]
+
+. link:kafka-streams-internals-GlobalStoreNode.adoc[GlobalStoreNode]
+. link:kafka-streams-internals-GroupedTableOperationRepartitionNode.adoc[GroupedTableOperationRepartitionNode]
+.. link:kafka-streams-internals-GroupedTableOperationRepartitionNodeBuilder.adoc[GroupedTableOperationRepartitionNodeBuilder]
+. link:kafka-streams-internals-KTableKTableJoinNode.adoc[KTableKTableJoinNode]
+. link:kafka-streams-internals-OptimizableRepartitionNode.adoc[OptimizableRepartitionNode]
+. link:kafka-streams-internals-ProcessorGraphNode.adoc[ProcessorGraphNode]
+. link:kafka-streams-internals-StatefulProcessorNode.adoc[StatefulProcessorNode]
+. link:kafka-streams-internals-StateStoreNode.adoc[StateStoreNode]
+. link:kafka-streams-internals-StreamSinkNode.adoc[StreamSinkNode]
+. link:kafka-streams-internals-StreamSourceNode.adoc[StreamSourceNode]
+. link:kafka-streams-internals-StreamStreamJoinNode.adoc[StreamStreamJoinNode]
+. link:kafka-streams-internals-StreamTableJoinNode.adoc[StreamTableJoinNode]
+. link:kafka-streams-internals-TableProcessorNode.adoc[TableProcessorNode]
+. link:kafka-streams-internals-TableSourceNode.adoc[TableSourceNode]
+
+=== Processors and ProcessorSuppliers
+
+. link:kafka-streams-internals-KStreamAggProcessorSupplier.adoc[KStreamAggProcessorSupplier]
+
+. link:kafka-streams-internals-KStreamBranch.adoc[KStreamBranch]
+
+. link:kafka-streams-internals-KStreamFilterProcessor.adoc[KStreamFilterProcessor]
+.. link:kafka-streams-internals-KStreamFilter.adoc[KStreamFilter]
+
+. link:kafka-streams-internals-KStreamJoinWindowProcessor.adoc[KStreamJoinWindowProcessor]
+
+. link:kafka-streams-internals-KStreamPeek.adoc[KStreamPeek]
+
+. link:kafka-streams-internals-KStreamPassThrough.adoc[KStreamPassThrough]
+
+. link:kafka-streams-internals-KStreamSessionWindowAggregateProcessor.adoc[KStreamSessionWindowAggregateProcessor]
+.. link:kafka-streams-internals-KStreamSessionWindowAggregate.adoc[KStreamSessionWindowAggregate]
+
+. link:kafka-streams-internals-KStreamTransformProcessor.adoc[KStreamTransformProcessor]
+.. link:kafka-streams-internals-KStreamTransform.adoc[KStreamTransform]
+
+. link:kafka-streams-internals-KStreamTransformValuesProcessor.adoc[KStreamTransformValuesProcessor]
+.. link:kafka-streams-internals-KStreamTransformValues.adoc[KStreamTransformValues]
+
+. link:kafka-streams-internals-KStreamWindowAggregateProcessor.adoc[KStreamWindowAggregateProcessor]
+.. link:kafka-streams-internals-KStreamWindowAggregate.adoc[KStreamWindowAggregate]
+
+. link:kafka-streams-internals-KTableSourceProcessor.adoc[KTableSourceProcessor]
+.. link:kafka-streams-internals-KTableSource.adoc[KTableSource]
+
+. link:kafka-streams-internals-KTableSuppressProcessor.adoc[KTableSuppressProcessor]
+
+. link:kafka-streams-internals-KTableValueGetter.adoc[KTableValueGetter]
+. link:kafka-streams-internals-KTableValueGetterSupplier.adoc[KTableValueGetterSupplier]
+.. link:kafka-streams-internals-KTableMaterializedValueGetterSupplier.adoc[KTableMaterializedValueGetterSupplier]
+.. link:kafka-streams-internals-KTableSourceValueGetterSupplier.adoc[KTableSourceValueGetterSupplier]
+.. link:kafka-streams-internals-KTableKTableAbstractJoinValueGetterSupplier.adoc[KTableKTableAbstractJoinValueGetterSupplier]
+
+=== Internals of State Stores
+
+. link:kafka-streams-internals-WrappedStateStore.adoc[WrappedStateStore]
+.. link:kafka-streams-internals-CachingKeyValueStore.adoc[CachingKeyValueStore]
+.. link:kafka-streams-internals-CachingSessionStore.adoc[CachingSessionStore]
+.. link:kafka-streams-internals-CachingWindowStore.adoc[CachingWindowStore]
+.. link:kafka-streams-internals-ChangeLoggingKeyValueBytesStore.adoc[ChangeLoggingKeyValueBytesStore]
+.. link:kafka-streams-internals-ChangeLoggingSessionBytesStore.adoc[ChangeLoggingSessionBytesStore]
+.. link:kafka-streams-internals-ChangeLoggingWindowBytesStore.adoc[ChangeLoggingWindowBytesStore]
+.. link:kafka-streams-internals-MeteredKeyValueStore.adoc[MeteredKeyValueStore]
+.. link:kafka-streams-internals-MeteredSessionStore.adoc[MeteredSessionStore]
+.. link:kafka-streams-internals-MeteredWindowStore.adoc[MeteredWindowStore]
+.. link:kafka-streams-internals-RocksDBSessionStore.adoc[RocksDBSessionStore]
+.. link:kafka-streams-internals-RocksDBWindowStore.adoc[RocksDBWindowStore]
+.. link:kafka-streams-internals-InMemoryKeyValueStore.adoc[InMemoryKeyValueStore]
+.. link:kafka-streams-internals-InMemorySessionStore.adoc[InMemorySessionStore]
+.. link:kafka-streams-internals-InMemoryWindowStore.adoc[InMemoryWindowStore]
+.. link:kafka-streams-internals-MemoryLRUCache.adoc[MemoryLRUCache]
+.. link:kafka-streams-internals-MeteredKeyValueBytesStore.adoc[MeteredKeyValueBytesStore]
+.. link:kafka-streams-internals-RocksDBStore.adoc[RocksDBStore]
+.. link:kafka-streams-internals-RocksDBTimestampedStore.adoc[RocksDBTimestampedStore]
+
+. link:kafka-streams-internals-AbstractStoreBuilder.adoc[AbstractStoreBuilder]
+.. link:kafka-streams-internals-KeyValueStoreBuilder.adoc[KeyValueStoreBuilder]
+.. link:kafka-streams-internals-SessionStoreBuilder.adoc[SessionStoreBuilder]
+.. link:kafka-streams-internals-TimestampedKeyValueStoreBuilder.adoc[TimestampedKeyValueStoreBuilder]
+.. link:kafka-streams-internals-TimestampedWindowStoreBuilder.adoc[TimestampedWindowStoreBuilder]
+.. link:kafka-streams-internals-WindowStoreBuilder.adoc[WindowStoreBuilder]
+
+. link:kafka-streams-internals-InMemorySessionBytesStoreSupplier.adoc[InMemorySessionBytesStoreSupplier]
+. link:kafka-streams-internals-RocksDbKeyValueBytesStoreSupplier.adoc[RocksDbKeyValueBytesStoreSupplier]
+. link:kafka-streams-internals-RocksDbSessionBytesStoreSupplier.adoc[RocksDbSessionBytesStoreSupplier]
+. link:kafka-streams-internals-RocksDbWindowBytesStoreSupplier.adoc[RocksDbWindowBytesStoreSupplier]
+
+. link:kafka-streams-internals-KeyValueToTimestampedKeyValueByteStoreAdapter.adoc[KeyValueToTimestampedKeyValueByteStoreAdapter]
+. link:kafka-streams-internals-WindowToTimestampedWindowByteStoreAdapter.adoc[WindowToTimestampedWindowByteStoreAdapter]
+
+. link:kafka-streams-internals-SegmentedBytesStore.adoc[SegmentedBytesStore]
+.. link:kafka-streams-internals-AbstractRocksDBSegmentedBytesStore.adoc[AbstractRocksDBSegmentedBytesStore]
+.. link:kafka-streams-internals-RocksDBSegmentedBytesStore.adoc[RocksDBSegmentedBytesStore]
+
+. link:kafka-streams-internals-TimeOrderedKeyValueBuffer.adoc[TimeOrderedKeyValueBuffer]
+.. link:kafka-streams-internals-InMemoryTimeOrderedKeyValueBuffer.adoc[InMemoryTimeOrderedKeyValueBuffer]
+
+. link:kafka-streams-internals-CachedStateStore.adoc[CachedStateStore]
+
+=== Logical Plan of Stream Processing Execution
+
+. link:kafka-streams-internals-ProcessorNode.adoc[ProcessorNode]
+.. link:kafka-streams-internals-SourceNode.adoc[SourceNode]
+.. link:kafka-streams-internals-SinkNode.adoc[SinkNode]
+
+. link:kafka-streams-internals-NodeMetrics.adoc[NodeMetrics]
+
+. link:kafka-streams-internals-InternalTopicConfig.adoc[InternalTopicConfig]
+.. link:kafka-streams-internals-WindowedChangelogTopicConfig.adoc[WindowedChangelogTopicConfig]
+.. link:kafka-streams-internals-UnwindowedChangelogTopicConfig.adoc[UnwindowedChangelogTopicConfig]
+
+. link:kafka-streams-internals-WindowedStreamPartitioner.adoc[WindowedStreamPartitioner]
+. link:kafka-streams-internals-WindowedSerializer.adoc[WindowedSerializer]
+
+. link:kafka-streams-internals-DefaultKafkaClientSupplier.adoc[DefaultKafkaClientSupplier]
+
+. link:kafka-streams-internals-SessionWindow.adoc[SessionWindow]
+. link:kafka-streams-internals-TimeWindow.adoc[TimeWindow]
+. link:kafka-streams-internals-UnlimitedWindow.adoc[UnlimitedWindow]
+
+. link:kafka-streams-internals-AbstractStream.adoc[AbstractStream]
+.. link:kafka-streams-internals-GlobalKTableImpl.adoc[GlobalKTableImpl]
+.. link:kafka-streams-internals-KGroupedStreamImpl.adoc[KGroupedStreamImpl]
+.. link:kafka-streams-internals-KGroupedTableImpl.adoc[KGroupedTableImpl]
+.. link:kafka-streams-internals-KStreamAggregate.adoc[KStreamAggregate]
+.. link:kafka-streams-internals-KStreamImpl.adoc[KStreamImpl]
+.. link:kafka-streams-internals-KTableImpl.adoc[KTableImpl]
+.. link:kafka-streams-internals-SessionWindowedKStreamImpl.adoc[SessionWindowedKStreamImpl -- Default SessionWindowedKStream]
+.. link:kafka-streams-internals-TimeWindowedKStreamImpl.adoc[TimeWindowedKStreamImpl]
+
+. link:kafka-streams-internals-MaterializedInternal.adoc[MaterializedInternal]
+. link:kafka-streams-internals-KeyValueStoreMaterializer.adoc[KeyValueStoreMaterializer]
+
+. link:kafka-streams-internals-InternalNameProvider.adoc[InternalNameProvider Contract]
+
+. link:kafka-streams-internals-GroupedStreamAggregateBuilder.adoc[GroupedStreamAggregateBuilder]
+. link:kafka-streams-internals-KStreamImpl-KStreamImplJoin.adoc[KStreamImplJoin]
+
+. link:kafka-streams-internals-StaticTopicNameExtractor.adoc[StaticTopicNameExtractor]
+
+. link:kafka-streams-internals-ConsumedInternal.adoc[ConsumedInternal]
+. link:kafka-streams-internals-ProducedInternal.adoc[ProducedInternal]
+. link:kafka-streams-internals-QuickUnion.adoc[QuickUnion]
+. link:kafka-streams-internals-TopicsInfo.adoc[TopicsInfo]
+
+=== Physical Plan of Stream Processing Execution
+
+. link:kafka-streams-internals-ProcessorTopology.adoc[ProcessorTopology]
+
+. link:kafka-streams-internals-Task.adoc[Task]
+.. link:kafka-streams-internals-AbstractTask.adoc[AbstractTask]
+.. link:kafka-streams-internals-StandbyTask.adoc[StandbyTask]
+.. link:kafka-streams-internals-StreamTask.adoc[StreamTask]
+
+. link:kafka-streams-internals-ProcessorContextImpl.adoc[ProcessorContextImpl]
+
+. link:kafka-streams-internals-ProducerSupplier.adoc[ProducerSupplier]
+
+. link:kafka-streams-internals-AssignedTasks.adoc[AssignedTasks]
+.. link:kafka-streams-internals-AssignedStandbyTasks.adoc[AssignedStandbyTasks]
+.. link:kafka-streams-internals-AssignedStreamsTasks.adoc[AssignedStreamsTasks]
+
+. link:kafka-streams-internals-ProcessorNodePunctuator.adoc[ProcessorNodePunctuator]
+
+=== Kafka Streams Execution Engine
+
+. link:kafka-streams-internals-TaskManager.adoc[TaskManager]
+.. link:kafka-streams-internals-TaskCreator.adoc[TaskCreator]
+.. link:kafka-streams-internals-StandbyTaskCreator.adoc[StandbyTaskCreator]
+.. link:kafka-streams-internals-AbstractTaskCreator.adoc[AbstractTaskCreator]
+
+. link:kafka-streams-internals-StreamThread.adoc[StreamThread]
+. link:kafka-streams-StreamThread-RebalanceListener.adoc[RebalanceListener]
+. link:kafka-streams-StreamThread-StateListener.adoc[StateListener]
+. link:kafka-streams-internals-StreamsMetadataState.adoc[StreamsMetadataState]
+
+. link:kafka-streams-internals-StreamsPartitionAssignor.adoc[StreamsPartitionAssignor]
+.. link:kafka-streams-internals-InternalTopicManager.adoc[InternalTopicManager]
+.. link:kafka-streams-internals-AssignmentInfo.adoc[AssignmentInfo]
+.. link:kafka-streams-internals-SubscriptionInfo.adoc[SubscriptionInfo]
+.. link:kafka-streams-internals-ClientMetadata.adoc[ClientMetadata]
+.. link:kafka-streams-internals-TaskAssignor.adoc[TaskAssignor Contract]
+... link:kafka-streams-internals-StickyTaskAssignor.adoc[StickyTaskAssignor]
+
+. link:kafka-streams-internals-InternalProcessorContext.adoc[InternalProcessorContext Contract]
+.. link:kafka-streams-internals-AbstractProcessorContext.adoc[AbstractProcessorContext]
+.. link:kafka-streams-internals-GlobalProcessorContextImpl.adoc[GlobalProcessorContextImpl]
+.. link:kafka-streams-internals-StandbyContextImpl.adoc[StandbyContextImpl]
+
+. link:kafka-streams-internals-ForwardingDisabledProcessorContext.adoc[ForwardingDisabledProcessorContext]
+
+. link:kafka-streams-internals-GlobalStreamThread.adoc[GlobalStreamThread]
+.. link:kafka-streams-internals-StateConsumer.adoc[StateConsumer]
+
+. link:kafka-streams-internals-GlobalStateMaintainer.adoc[GlobalStateMaintainer]
+.. link:kafka-streams-internals-GlobalStateUpdateTask.adoc[GlobalStateUpdateTask]
+
+. link:kafka-streams-internals-RecordCollector.adoc[RecordCollector]
+.. link:kafka-streams-internals-RecordCollectorImpl.adoc[RecordCollectorImpl]
+
+. link:kafka-streams-internals-ThreadCache.adoc[ThreadCache]
+.. link:kafka-streams-internals-NamedCache.adoc[NamedCache]
+
+. link:kafka-streams-Stamped.adoc[Stamped]
+
+. link:kafka-streams-internals-PartitionGroup.adoc[PartitionGroup]
+.. link:kafka-streams-internals-RecordInfo.adoc[RecordInfo]
+
+. link:kafka-streams-internals-RecordQueue.adoc[RecordQueue]
+.. link:kafka-streams-internals-StampedRecord.adoc[StampedRecord]
+
+. link:kafka-streams-internals-PunctuationQueue.adoc[PunctuationQueue]
+.. link:kafka-streams-PunctuationSchedule.adoc[PunctuationSchedule]
+
+. link:kafka-streams-internals-QueryableStoreProvider.adoc[QueryableStoreProvider]
+. link:kafka-streams-internals-StateStoreProvider.adoc[StateStoreProvider]
+.. link:kafka-streams-internals-StreamThreadStateStoreProvider.adoc[StreamThreadStateStoreProvider]
+.. link:kafka-streams-internals-GlobalStateStoreProvider.adoc[GlobalStateStoreProvider]
+.. link:kafka-streams-internals-WrappingStoreProvider.adoc[WrappingStoreProvider]
+
+. link:kafka-streams-internals-RecordDeserializer.adoc[RecordDeserializer]
+
+. link:kafka-streams-internals-StateDirectory.adoc[StateDirectory]
+. link:kafka-streams-internals-ProcessorRecordContext.adoc[ProcessorRecordContext]
+
+. link:kafka-streams-internals-CopartitionedTopicsValidator.adoc[CopartitionedTopicsValidator]
+
+=== State (Store) Management
+
+. link:kafka-streams-internals-StateManager.adoc[StateManager]
+.. link:kafka-streams-internals-AbstractStateManager.adoc[AbstractStateManager]
+
+. link:kafka-streams-internals-ProcessorStateManager.adoc[ProcessorStateManager]
+
+. link:kafka-streams-internals-GlobalStateManager.adoc[GlobalStateManager]
+.. link:kafka-streams-internals-GlobalStateManagerImpl.adoc[GlobalStateManagerImpl]
+
+. link:kafka-streams-internals-Checkpointable.adoc[Checkpointable]
+
+. link:kafka-streams-internals-OffsetCheckpoint.adoc[OffsetCheckpoint]
+
+. link:kafka-streams-internals-ChangelogReader.adoc[ChangelogReader]
+.. link:kafka-streams-internals-StoreChangelogReader.adoc[StoreChangelogReader]
+
+. link:kafka-streams-internals-StateRestorer.adoc[StateRestorer]
+
+. link:kafka-streams-internals-RestoringTasks.adoc[RestoringTasks]
+
+. link:kafka-streams-internals-RecordBatchingStateRestoreCallback.adoc[RecordBatchingStateRestoreCallback]
+.. link:kafka-streams-internals-CompositeRestoreListener.adoc[CompositeRestoreListener]
+
+. link:kafka-streams-internals-StateRestoreCallbackAdapter.adoc[StateRestoreCallbackAdapter]

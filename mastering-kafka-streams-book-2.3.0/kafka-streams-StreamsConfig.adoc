@@ -1,0 +1,435 @@
+== [[StreamsConfig]] StreamsConfig -- Configuration Properties for Kafka Clients
+
+`StreamsConfig` is a Apache Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/common/config/AbstractConfig.html[AbstractConfig] with the <<properties, configuration properties>> for a Kafka Streams application.
+
+`StreamsConfig` is used to reference the <<properties, properties names>> (e.g. to avoid any typos or a better type safety).
+
+[source, scala]
+----
+import org.apache.kafka.streams.StreamsConfig
+val conf = new java.util.Properties()
+conf.put(StreamsConfig.APPLICATION_ID_CONFIG, "appId")
+conf.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, ":9092,localhost:9192")
+----
+
+[[ADMIN_CLIENT_PREFIX]]
+`StreamsConfig` uses *admin.* prefix for the configuration properties that are meant to be used for a Kafka <<getAdminConfigs, AdminClient>>. Use <<adminClientPrefix, adminClientPrefix>> method to add the prefix to a `AdminClient` property.
+
+[source, scala]
+----
+import org.apache.kafka.clients.admin.AdminClientConfig
+scala> println(AdminClientConfig.RETRIES_CONFIG)
+retries
+
+import org.apache.kafka.streams.StreamsConfig.adminClientPrefix
+scala> println(adminClientPrefix(AdminClientConfig.RETRIES_CONFIG))
+admin.retries
+----
+
+[[properties]]
+.Constants for Configuration Properties
+[cols="1m,1",options="header",width="100%"]
+|===
+| Name
+| Property
+
+| APPLICATION_ID_CONFIG
+| [[APPLICATION_ID_CONFIG]] <<kafka-streams-properties.adoc#application.id, application.id>>
+
+| APPLICATION_SERVER_CONFIG
+| [[APPLICATION_SERVER_CONFIG]] <<kafka-streams-properties.adoc#application.server, application.server>>
+
+| BOOTSTRAP_SERVERS_CONFIG
+| [[BOOTSTRAP_SERVERS_CONFIG]] Kafka Client's `bootstrap.servers`
+
+| BUFFERED_RECORDS_PER_PARTITION_CONFIG
+| [[BUFFERED_RECORDS_PER_PARTITION_CONFIG]] <<kafka-streams-properties.adoc#buffered.records.per.partition, buffered.records.per.partition>>
+
+| CACHE_MAX_BYTES_BUFFERING_CONFIG
+| [[CACHE_MAX_BYTES_BUFFERING_CONFIG]] <<kafka-streams-properties.adoc#cache.max.bytes.buffering, cache.max.bytes.buffering>>
+
+| CLIENT_ID_CONFIG
+| [[CLIENT_ID_CONFIG]] <<kafka-streams-properties.adoc#client.id, client.id>>
+
+| COMMIT_INTERVAL_MS_CONFIG
+| [[COMMIT_INTERVAL_MS_CONFIG]] <<kafka-streams-properties.adoc#commit.interval.ms, commit.interval.ms>>
+
+| DEFAULT_WINDOWED_KEY_SERDE_INNER_CLASS
+| [[DEFAULT_WINDOWED_KEY_SERDE_INNER_CLASS]] <<kafka-streams-properties.adoc#default.windowed.key.serde.inner, default.windowed.key.serde.inner>>
+
+| DEFAULT_WINDOWED_VALUE_SERDE_INNER_CLASS
+| [[DEFAULT_WINDOWED_VALUE_SERDE_INNER_CLASS]] <<kafka-streams-properties.adoc#default.windowed.value.serde.inner, default.windowed.value.serde.inner>>
+
+| DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG
+| [[DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG]] <<kafka-streams-properties.adoc#default.timestamp.extractor, default.timestamp.extractor>>
+
+| MAX_TASK_IDLE_MS_CONFIG
+| [[MAX_TASK_IDLE_MS_CONFIG]] <<kafka-streams-properties.adoc#max.task.idle.ms, max.task.idle.ms>>
+
+| METRICS_RECORDING_LEVEL_CONFIG
+| [[METRICS_RECORDING_LEVEL_CONFIG]] <<kafka-streams-properties.adoc#metrics.recording.level, metrics.recording.level>>
+
+| NUM_STANDBY_REPLICAS_CONFIG
+| [[NUM_STANDBY_REPLICAS_CONFIG]] <<kafka-streams-properties.adoc#num.standby.replicas, num.standby.replicas>>
+
+| NUM_STREAM_THREADS_CONFIG
+| [[NUM_STREAM_THREADS_CONFIG]] <<kafka-streams-properties.adoc#num.stream.threads, num.stream.threads>>
+
+| PARTITION_GROUPER_CLASS_CONFIG
+| [[PARTITION_GROUPER_CLASS_CONFIG]] <<kafka-streams-properties.adoc#partition.grouper, partition.grouper>>
+
+| POLL_MS_CONFIG
+| [[POLL_MS_CONFIG]] <<kafka-streams-properties.adoc#poll.ms, poll.ms>>
+
+| PROCESSING_GUARANTEE_CONFIG
+| [[PROCESSING_GUARANTEE_CONFIG]] <<kafka-streams-properties.adoc#processing.guarantee, processing.guarantee>>
+
+| REPLICATION_FACTOR_CONFIG
+| [[REPLICATION_FACTOR_CONFIG]] <<kafka-streams-properties.adoc#replication.factor, replication.factor>>
+
+| STATE_CLEANUP_DELAY_MS_CONFIG
+| [[STATE_CLEANUP_DELAY_MS_CONFIG]] <<kafka-streams-properties.adoc#state.cleanup.delay.ms, state.cleanup.delay.ms>>
+
+| STATE_DIR_CONFIG
+| [[STATE_DIR_CONFIG]] <<kafka-streams-properties.adoc#state.dir, state.dir>>
+
+| UPGRADE_FROM_CONFIG
+| [[UPGRADE_FROM_CONFIG]]
+
+| WINDOW_STORE_CHANGE_LOG_ADDITIONAL_RETENTION_MS_CONFIG
+| [[WINDOW_STORE_CHANGE_LOG_ADDITIONAL_RETENTION_MS_CONFIG]] <<kafka-streams-properties.adoc#windowstore.changelog.additional.retention.ms, windowstore.changelog.additional.retention.ms>>
+
+|===
+
+`StreamsConfig` is also used the configuration for the following Kafka clients (that Kafka Streams uses under the covers):
+
+* <<getMainConsumerConfigs, Consumer>>
+
+* <<getProducerConfigs, Producer>>
+
+* <<getAdminConfigs, AdminClient>>
+
+* <<getRestoreConsumerConfigs, Restore Consumer>>
+
+[source, scala]
+----
+import org.apache.kafka.streams.StreamsConfig
+val props = new java.util.Properties()
+// ...
+val conf = new StreamsConfig(props)
+
+// Consumer Properties
+val consumerConfigs = conf.getMainConsumerConfigs("groupId", "clientId")
+import collection.JavaConverters._
+scala> consumerConfigs.asScala.map { case (key, value) => s"$key -> $value" }.foreach(println)
+replication.factor -> 1
+num.standby.replicas -> 0
+max.poll.records -> 1000
+group.id -> groupId
+partition.assignment.strategy -> org.apache.kafka.streams.processor.internals.StreamsPartitionAssignor
+bootstrap.servers -> localhost:8082
+enable.auto.commit -> false
+admin.retries -> 5
+application.server ->
+max.poll.interval.ms -> 2147483647
+auto.offset.reset -> earliest
+windowstore.changelog.additional.retention.ms -> 86400000
+internal.leave.group.on.close -> false
+application.id -> groupId
+client.id -> clientId-consumer
+----
+
+`StreamsConfig` does not allow users to configure certain Kafka configurations (e.g. for <<CONSUMER_DEFAULT_OVERRIDES, consumer>>) that are simply <<checkIfUnexpectedUserSpecifiedConsumerConfig, removed>> (with a WARN message in the logs).
+
+[[CONSUMER_DEFAULT_OVERRIDES]]
+.Kafka Consumer Non-Overridable Configurations
+[cols="1m,1m,2",options="header",width="100%"]
+|===
+| Name
+| Value
+| Description
+
+| max.poll.records
+| 1000
+| [[max.poll.records]]
+
+| auto.offset.reset
+| earliest
+| [[auto.offset.reset]]
+
+| buffered.records.per.partition
+| 1000
+| [[buffered.records.per.partition]] The maximum number of records to buffer per partition
+
+| enable.auto.commit
+| false
+| [[enable.auto.commit]]
+
+| internal.leave.group.on.close
+| false
+| [[internal.leave.group.on.close]]
+
+| max.poll.interval.ms
+| Integer.MAX_VALUE
+| [[max.poll.interval.ms]]
+|===
+
+[[CONSUMER_PREFIX]]
+`StreamsConfig` uses `consumer` prefix for custom Kafka configurations of a Kafka consumer.
+
+[[InternalConfig]]
+`StreamsConfig` defines the `InternalConfig` inner class with the <<internal-properties, internal properties>>.
+
+[[InternalStreamsConfig]]
+NOTE: `InternalStreamsConfig` is an extension of `StreamsConfig` that is used in <<kafka-streams-internals-StreamsPartitionAssignor.adoc#, StreamsPartitionAssignor>> to specify custom <<props, configuration properties>> and turn the <<doLog, doLog>> flag off.
+
+=== [[EXACTLY_ONCE]] StreamsConfig.EXACTLY_ONCE for Exactly-Once Support (EOS)
+
+[source, java]
+----
+String EXACTLY_ONCE = "exactly_once"
+----
+
+`StreamsConfig` defines `StreamsConfig.EXACTLY_ONCE` (`exactly_once`) constant value that is used for the following:
+
+* <<eosEnabled, eosEnabled>> internal flag
+
+* <<postProcessParsedConfig, postProcessParsedConfig>>
+
+* <<checkIfUnexpectedUserSpecifiedConsumerConfig, checkIfUnexpectedUserSpecifiedConsumerConfig>>
+
+* <<kafka-streams-internals-AbstractTask.adoc#eosEnabled, AbstractTask>> is created
+
+* <<kafka-streams-internals-GlobalStateManagerImpl.adoc#, GlobalStateManagerImpl>> is created
+
+* <<kafka-streams-internals-StreamThread.adoc#create, StreamThread>> is created
+
+=== [[postProcessParsedConfig]] `postProcessParsedConfig` Method
+
+[source, java]
+----
+Map<String, Object> postProcessParsedConfig(
+  Map<String, Object> parsedValues)
+----
+
+`postProcessParsedConfig`...FIXME
+
+NOTE: `postProcessParsedConfig` is used when...FIXME
+
+=== [[eosEnabled]] `eosEnabled` Internal Flag for Exactly-Once Support (EOS)
+
+`StreamsConfig` defines `eosEnabled` internal flag that is enabled (`true`) when <<PROCESSING_GUARANTEE_CONFIG, StreamsConfig.PROCESSING_GUARANTEE_CONFIG>> is <<EXACTLY_ONCE, EXACTLY_ONCE>>.
+
+`eosEnabled` is used for the following:
+
+* ...FIXME
+
+=== [[getProducerConfigs]] `getProducerConfigs` Method
+
+[source, java]
+----
+Map<String, Object> getProducerConfigs(final String clientId)
+----
+
+`getProducerConfigs`...FIXME
+
+NOTE: `getProducerConfigs` is used when...FIXME
+
+=== [[getAdminConfigs]] Getting Configuration for (Creating) Kafka AdminClient -- `getAdminConfigs` Method
+
+[source, java]
+----
+Map<String, Object> getAdminConfigs(final String clientId)
+----
+
+`getAdminConfigs` firstly <<getClientPropsWithPrefix, finds the client properties>> for a Kafka AdminClient (with <<ADMIN_CLIENT_PREFIX, admin.>> prefix).
+
+`getAdminConfigs` takes the <<getClientCustomProps, getClientCustomProps>> and copies the AdminClient properties over.
+
+In the end, `getAdminConfigs` adds the `clientId` with `-admin` suffix as the `client.id` configuration property.
+
+[source, scala]
+----
+import org.apache.kafka.streams.StreamsConfig
+val props = new java.util.Properties()
+// required configurations
+props.put(StreamsConfig.APPLICATION_ID_CONFIG, "demo")
+props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, ":9092")
+
+// Define a custom configuration with admin prefix
+import org.apache.kafka.clients.admin.AdminClientConfig
+props.put("admin." + AdminClientConfig.METADATA_MAX_AGE_CONFIG, "10")
+val streamsConf = new StreamsConfig(props)
+val adminConfigs = streamsConf.getAdminConfigs("my-client-id")
+
+import scala.collection.JavaConverters._
+scala> adminConfigs.asScala.map { case (k,v) => s"$k = $v" }.foreach(println)
+bootstrap.servers = :9092
+metadata.max.age.ms = 10
+client.id = my-client-id-admin
+----
+
+[NOTE]
+====
+`getAdminConfigs` is used when:
+
+* `KafkaStreams` is <<kafka-streams-KafkaStreams.adoc#adminClient, created>>
+
+* `InternalTopicManager` is <<kafka-streams-internals-InternalTopicManager.adoc#retries, created>>
+====
+
+=== [[clientProps]] Collecting Properties per Key -- `clientProps` Internal Method
+
+[source, java]
+----
+Map<String, Object> clientProps(
+  final Set<String> configNames,
+  final Map<String, Object> originals)
+----
+
+`clientProps` collects the configuration properties from `originals` that have their names in the input `configNames`, i.e. includes the properties that have been listed in `configNames`.
+
+NOTE: `clientProps` is used exclusively when `StreamsConfig` is requested to <<getClientPropsWithPrefix, getClientPropsWithPrefix>>.
+
+=== [[getClientPropsWithPrefix]] Getting Subset of User Configuration by Given Names and Prefix -- `getClientPropsWithPrefix` Internal Method
+
+[source, java]
+----
+Map<String, Object> getClientPropsWithPrefix(
+  final String prefix,
+  final Set<String> configNames)
+----
+
+`getClientPropsWithPrefix` takes only the properties (as passed in by a user) that have their keys in `configNames` and adds all properties with the given `prefix`.
+
+Internally, `getClientPropsWithPrefix` <<clientProps, collects the configuration properties>> from the original values of Kafka properties as passed in by a user that have their names in `configNames`.
+
+`getClientPropsWithPrefix` then copies all original settings with the given `prefix` (stripping the prefix before adding them) to the collected properties (and possibly overwriting some).
+
+NOTE: `getClientPropsWithPrefix` uses link:++https://kafka.apache.org/22/javadoc/org/apache/kafka/common/config/AbstractConfig.html#originals--++[AbstractConfig.originals] to get the original values of Kafka properties as passed in by the user.
+
+NOTE: `getClientPropsWithPrefix` is used when `StreamsConfig` is requested for <<getAdminConfigs, getAdminConfigs>>, <<getCommonConsumerConfigs, getCommonConsumerConfigs>>, <<getMainConsumerConfigs, getMainConsumerConfigs>> and <<getProducerConfigs, getProducerConfigs>>.
+
+=== [[getCommonConsumerConfigs]] Getting Common Consumer Configuration -- `getCommonConsumerConfigs` Internal Method
+
+[source, java]
+----
+Map<String, Object> getCommonConsumerConfigs()
+----
+
+`getCommonConsumerConfigs` <<getClientPropsWithPrefix, gets a subset of user configuration>> for a Kafka consumer as well as the properties with <<CONSUMER_PREFIX, consumer>> prefix.
+
+NOTE: `getCommonConsumerConfigs` uses https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/ConsumerConfig.html[ConsumerConfig.configNames] for the list of the Kafka Consumer-specific configuration keys.
+
+CAUTION: FIXME
+
+NOTE: `getCommonConsumerConfigs` is used when `StreamsConfig` is requested for <<getMainConsumerConfigs, getMainConsumerConfigs>> and <<getRestoreConsumerConfigs, getRestoreConsumerConfigs>>.
+
+=== [[checkIfUnexpectedUserSpecifiedConsumerConfig]] Removing "Illegal" User-Defined Configuration Properties -- `checkIfUnexpectedUserSpecifiedConsumerConfig` Internal Method
+
+[source, java]
+----
+void checkIfUnexpectedUserSpecifiedConsumerConfig(
+  Map<String, Object> clientProvidedProps,
+  String[] nonConfigurableConfigs)
+----
+
+`checkIfUnexpectedUserSpecifiedConsumerConfig` removes non-configurable configuration properties (`nonConfigurableConfigs`) from user-defined configurations (`clientProvidedProps`) and prints out a warning for any violation.
+
+Internally, `checkIfUnexpectedUserSpecifiedConsumerConfig` iterates over `nonConfigurableConfigs`...FIXME
+
+NOTE: `checkIfUnexpectedUserSpecifiedConsumerConfig` is used when `StreamsConfig` is requested for <<getCommonConsumerConfigs, getCommonConsumerConfigs>> and <<getProducerConfigs, getProducerConfigs>>.
+
+=== [[getRestoreConsumerConfigs]] `getRestoreConsumerConfigs` Method
+
+[source, java]
+----
+Map<String, Object> getRestoreConsumerConfigs(final String clientId)
+----
+
+`getRestoreConsumerConfigs`...FIXME
+
+NOTE: `getRestoreConsumerConfigs` is used when...FIXME
+
+=== [[getMainConsumerConfigs]] Configuration for Kafka Consumer -- `getMainConsumerConfigs` Method
+
+[source, java]
+----
+Map<String, Object> getMainConsumerConfigs(
+  final String groupId,
+  final String clientId)
+----
+
+`getMainConsumerConfigs` <<getCommonConsumerConfigs, gets the base configuration for a Kafka Consumer>> first.
+
+`getMainConsumerConfigs` then...FIXME
+
+NOTE: `getMainConsumerConfigs` is used exclusively when `StreamThread` is requested to <<kafka-streams-internals-StreamThread.adoc#create, create a StreamThread instance>> (and requests the `KafkaClientSupplier` for a <<kafka-streams-KafkaClientSupplier.adoc#getConsumer, Kafka Consumer>>).
+
+=== [[defaultValueSerde]] `defaultValueSerde` Method
+
+[source, java]
+----
+Serde defaultValueSerde()
+----
+
+`defaultValueSerde`...FIXME
+
+NOTE: `defaultValueSerde` is used when...FIXME
+
+=== [[defaultKeySerde]] `defaultKeySerde` Method
+
+[source, java]
+----
+Serde defaultKeySerde()
+----
+
+`defaultKeySerde`...FIXME
+
+NOTE: `defaultKeySerde` is used when...FIXME
+
+=== [[originalsWithPrefix]] `originalsWithPrefix` Method
+
+[source, java]
+----
+Map<String, Object> originalsWithPrefix(String prefix)
+----
+
+`originalsWithPrefix`...FIXME
+
+NOTE: `originalsWithPrefix` is used when...FIXME
+
+=== [[adminClientPrefix]] `adminClientPrefix` Static Method
+
+[source, java]
+----
+static String adminClientPrefix(final String adminClientProp)
+----
+
+`adminClientPrefix` simply adds the <<ADMIN_CLIENT_PREFIX, admin.>> prefix to a given `adminClientProp`.
+
+=== [[creating-instance]] Creating StreamsConfig Instance
+
+`StreamsConfig` takes the following to be created:
+
+* [[props]] Configuration properties
+* [[doLog]] `doLog` flag
+
+`StreamsConfig` initializes the <<eosEnabled, eosEnabled>> internal property.
+
+=== [[internal-configuration-properties]] Internal Configuration Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Value
+
+| ASSIGNMENT_ERROR_CODE
+a| [[ASSIGNMENT_ERROR_CODE]] `++__assignment.error.code__++`
+
+| TASK_MANAGER_FOR_PARTITION_ASSIGNOR
+a| [[TASK_MANAGER_FOR_PARTITION_ASSIGNOR]] `++__task.manager.instance__++`
+
+Used to associate the <<kafka-streams-internals-TaskManager.adoc#, TaskManager>> (of <<kafka-streams-internals-StreamThread.adoc#, StreamThread>>) with <<kafka-streams-internals-StreamsPartitionAssignor.adoc#, StreamsPartitionAssignor>> (when <<kafka-streams-internals-StreamsPartitionAssignor.adoc#configure, configured>>)
+
+|===

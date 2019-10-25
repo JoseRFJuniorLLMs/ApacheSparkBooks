@@ -1,0 +1,83 @@
+== [[StateDirectory]] StateDirectory
+
+`StateDirectory` is...FIXME
+
+`StateDirectory` is <<creating-instance, created>> when `KafkaStreams` is link:kafka-streams-KafkaStreams.adoc#stateDirectory[created].
+
+[[stateDir]]
+`StateDirectory` uses link:kafka-streams-properties.adoc#state.dir[state.dir] and link:kafka-streams-properties.adoc#application.id[application.id] configuration properties for the location of the state store.
+
+NOTE: link:kafka-streams-properties.adoc#state.dir[state.dir] configuration property defaults to `/tmp/kafka-streams`.
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.kafka.streams.processor.internals.StateDirectory` logger to see what happens inside.
+
+Add the following line to `log4j.properties`:
+
+```
+log4j.logger.org.apache.kafka.streams.processor.internals.StateDirectory=ALL
+```
+
+Refer to <<kafka-logging.adoc#log4j.properties, Application Logging Using log4j>>.
+====
+
+=== [[clean]] `clean` Method
+
+[source, java]
+----
+synchronized void clean()
+----
+
+`clean`...FIXME
+
+NOTE: `clean` is used when...FIXME
+
+=== [[cleanRemovedTasks]] `cleanRemovedTasks` Method
+
+[source, java]
+----
+void cleanRemovedTasks(final long cleanupDelayMs) // <1>
+
+// private
+private void cleanRemovedTasks(
+  final long cleanupDelayMs,
+  final boolean manualUserCall) throws Exception
+----
+<1> Turns the `manualUserCall` flag off
+
+`cleanRemovedTasks`...FIXME
+
+NOTE: `cleanRemovedTasks` is used when...FIXME
+
+=== [[creating-instance]] Creating StateDirectory Instance
+
+`StateDirectory` takes the following when created:
+
+* [[config]] link:kafka-streams-StreamsConfig.adoc[StreamsConfig]
+* [[time]] `Time`
+
+`StateDirectory` initializes the <<internal-registries, internal registries and counters>>.
+
+=== [[listTaskDirectories]] `listTaskDirectories` Method
+
+[source, java]
+----
+File[] listTaskDirectories()
+----
+
+`listTaskDirectories`...FIXME
+
+NOTE: `listTaskDirectories` is used when...FIXME
+
+=== [[lock]] Locking State Directory For Task -- `lock` Method
+
+[source, java]
+----
+boolean lock(TaskId taskId)
+----
+
+`lock`...FIXME
+
+NOTE: `lock` is used when...FIXME

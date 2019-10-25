@@ -1,0 +1,145 @@
+== [[TaskContextImpl]] TaskContextImpl -- Default TaskContext
+
+`TaskContextImpl` is a concrete <<spark-TaskContext.adoc#, TaskContext>> that is <<creating-instance, created>> exclusively when `Task` is requested to <<spark-scheduler-Task.adoc#run, run>> (when `Executor` is requested to <<spark-Executor.adoc#launchTask, launch a task (on "Executor task launch worker" thread pool) sometime in the future>>).
+
+[[creating-instance]]
+`TaskContextImpl` takes the following to be created:
+
+* [[stageId]] Stage ID
+* [[stageAttemptNumber]] Stage (execution) attempt ID
+* [[partitionId]] Partition ID
+* [[taskAttemptId]] Task (execution) attempt ID
+* [[attemptNumber]] Attempt ID
+* [[taskMemoryManager]] <<spark-memory-TaskMemoryManager.adoc#, TaskMemoryManager>>
+* [[localProperties]] Local properties
+* [[metricsSystem]] <<spark-metrics-MetricsSystem.adoc#, MetricsSystem>>
+* [[taskMetrics]] <<spark-executor-TaskMetrics.adoc#, TaskMetrics>>
+
+[[internal-registries]]
+.TaskContextImpl's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="1m,3",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| onCompleteCallbacks
+a| [[onCompleteCallbacks]] (`ArrayBuffer[TaskCompletionListener]`)
+
+Used when...FIXME
+
+| onFailureCallbacks
+a| [[onFailureCallbacks]] (`ArrayBuffer[TaskFailureListener]`)
+
+Used when...FIXME
+
+| reasonIfKilled
+a| [[reasonIfKilled]] Reason if the task was killed
+
+Used when...FIXME
+
+| completed
+a| [[completed]][[isCompleted]] Flag whether...FIXME
+
+Default: `false`
+
+Used when...FIXME
+
+| failed
+a| [[failed]] Flag whether...FIXME
+
+Default: `false`
+
+Used when...FIXME
+
+| failure
+a| [[failure]] `java.lang.Throwable` that caused a failure
+
+Used when...FIXME
+
+| _fetchFailedException
+a| [[_fetchFailedException]] <<spark-TaskRunner-FetchFailedException.adoc#, FetchFailedException>> if there was a fetch failure
+
+Used when...FIXME
+
+|===
+
+=== [[addTaskCompletionListener]] `addTaskCompletionListener` Method
+
+[source, scala]
+----
+addTaskCompletionListener(listener: TaskCompletionListener): TaskContext
+----
+
+NOTE: `addTaskCompletionListener` is part of the <<spark-TaskContext.adoc#addTaskCompletionListener, TaskContext Contract>> to register a `TaskCompletionListener`.
+
+`addTaskCompletionListener`...FIXME
+
+=== [[addTaskFailureListener]] `addTaskFailureListener` Method
+
+[source, scala]
+----
+addTaskFailureListener(listener: TaskFailureListener): TaskContext
+----
+
+NOTE: `addTaskFailureListener` is part of the <<spark-TaskContext.adoc#addTaskFailureListener, TaskContext Contract>> to register a `TaskFailureListener`.
+
+`addTaskFailureListener`...FIXME
+
+=== [[markTaskFailed]] `markTaskFailed` Method
+
+[source, scala]
+----
+markTaskFailed(error: Throwable): Unit
+----
+
+NOTE: `markTaskFailed` is part of the <<spark-TaskContext.adoc#markTaskFailed, TaskContext Contract>> to mark the task as failed and trigger the `TaskFailureListeners`.
+
+`markTaskFailed`...FIXME
+
+=== [[markTaskCompleted]] `markTaskCompleted` Method
+
+[source, scala]
+----
+markTaskCompleted(error: Option[Throwable]): Unit
+----
+
+NOTE: `markTaskCompleted` is part of the <<spark-TaskContext.adoc#markTaskCompleted, TaskContext Contract>> to mark the task as completed and trigger the `TaskCompletionListeners`.
+
+`markTaskCompleted`...FIXME
+
+=== [[invokeListeners]] `invokeListeners` Internal Method
+
+[source, scala]
+----
+invokeListeners[T](
+  listeners: Seq[T],
+  name: String,
+  error: Option[Throwable])(
+  callback: T => Unit): Unit
+----
+
+`invokeListeners`...FIXME
+
+NOTE: `invokeListeners` is used when...FIXME
+
+=== [[markInterrupted]] `markInterrupted` Method
+
+[source, scala]
+----
+markInterrupted(reason: String): Unit
+----
+
+NOTE: `markInterrupted` is part of the <<spark-TaskContext.adoc#markInterrupted, TaskContext Contract>> to mark the task for interruption, i.e. cancellation.
+
+`markInterrupted`...FIXME
+
+=== [[killTaskIfInterrupted]] `killTaskIfInterrupted` Method
+
+[source, scala]
+----
+killTaskIfInterrupted(): Unit
+----
+
+NOTE: `killTaskIfInterrupted` is part of the <<spark-TaskContext.adoc#killTaskIfInterrupted, TaskContext Contract>> to mark the task for interruption, i.e. cancellation.
+
+`killTaskIfInterrupted`...FIXME

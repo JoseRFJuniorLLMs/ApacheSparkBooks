@@ -1,0 +1,75 @@
+== [[Evaluator]] Evaluator -- ML Pipeline Component for Model Scoring
+
+`Evaluator` is the <<contract, contract>> in Spark MLlib for ML Pipeline components that can <<evaluate, evaluate models>> for given link:spark-mllib-Params.adoc[parameters].
+
+*ML Pipeline evaluators* are transformers that take `DataFrames` and compute metrics indicating how good a model is.
+
+```
+evaluator: DataFrame =[evaluate]=> Double
+```
+
+`Evaluator` is used to evaluate models and is usually (if not always) used for best model selection by link:spark-mllib-CrossValidator.adoc#evaluator[CrossValidator] and link:spark-mllib-TrainValidationSplit.adoc#evaluator[TrainValidationSplit].
+
+`Evaluator` uses <<isLargerBetter, isLargerBetter>> method to indicate whether the `Double` metric should be maximized (`true`) or minimized (`false`). It considers a larger value better (`true`) by default.
+
+[[implementations]]
+.Evaluators
+[width="100%",cols="1,2",options="header"]
+|===
+| Evaluator
+| Description
+
+| link:spark-mllib-BinaryClassificationEvaluator.adoc[BinaryClassificationEvaluator]
+| Evaluator of binary classification models
+
+| link:spark-mllib-ClusteringEvaluator.adoc[ClusteringEvaluator]
+| Evaluator of clustering models
+
+| link:spark-mllib-MulticlassClassificationEvaluator.adoc[MulticlassClassificationEvaluator]
+| Evaluator of multiclass classification models
+
+| link:spark-mllib-RegressionEvaluator.adoc[RegressionEvaluator]
+| Evaluator of regression models
+|===
+
+=== [[evaluate-paramMap]] Evaluating Model Output with Extra Parameters -- `evaluate` Method
+
+[source, scala]
+----
+evaluate(dataset: Dataset[_], paramMap: ParamMap): Double
+----
+
+`evaluate` <<copy, copies>> the extra `paramMap` and <<evaluate, evaluates a model output>>.
+
+NOTE: `evaluate` is used...FIXME
+
+=== [[contract]] Evaluator Contract
+
+[source, scala]
+----
+package org.apache.spark.ml.evaluation
+
+abstract class Evaluator {
+  def evaluate(dataset: Dataset[_]): Double
+  def copy(extra: ParamMap): Evaluator
+  def isLargerBetter: Boolean = true
+}
+----
+
+.Evaluator Contract
+[cols="1,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| [[copy]] `copy`
+| Used when...
+
+| [[evaluate]] `evaluate`
+| Used when...
+
+| [[isLargerBetter]] `isLargerBetter`
+| Indicates whether the metric returned by <<evaluate, evaluate>> should be maximized (`true`) or minimized (`false`).
+
+Gives `true` by default.
+|===

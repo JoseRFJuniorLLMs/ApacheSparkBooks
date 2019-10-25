@@ -1,0 +1,39 @@
+== [[GlobalKTableImpl]] GlobalKTableImpl
+
+`GlobalKTableImpl` is a <<kafka-streams-GlobalKTable.adoc#, GlobalKTable>> (of `K` primary keys and `V` value changes) that uses a <<valueGetterSupplier, KTableValueGetterSupplier>> for the <<queryableStoreName, queryableStoreName>> when <<queryable, queryable>>.
+
+`GlobalKTableImpl` is <<creating-instance, created>> exclusively when `InternalStreamsBuilder` is requested to <<kafka-streams-internals-InternalStreamsBuilder.adoc#globalTable, add a global table to a topology>> (exclusively when `StreamsBuilder` is requested to <<kafka-streams-StreamsBuilder.adoc#globalTable, create a GlobalKTable>>).
+
+[source, scala]
+----
+import org.apache.kafka.streams.StreamsBuilder
+val builder = new StreamsBuilder
+
+val globalTable = builder.globalTable("topic")
+
+import org.apache.kafka.streams.kstream.internals.GlobalKTableImpl
+val impl = globalTable.asInstanceOf[GlobalKTableImpl[_, _]]
+
+scala> println(impl.queryableStoreName)
+null
+----
+
+=== [[creating-instance]] Creating GlobalKTableImpl Instance
+
+`GlobalKTableImpl` takes the following when created:
+
+* [[valueGetterSupplier]] link:kafka-streams-internals-KTableValueGetterSupplier.adoc[KTableValueGetterSupplier] (of `K` primary keys and `V` value changes)
+* [[queryable]] `queryable` flag
+
+=== [[queryableStoreName]] `queryableStoreName` Method
+
+[source, java]
+----
+String queryableStoreName()
+----
+
+NOTE: `queryableStoreName` is part of link:kafka-streams-GlobalKTable.adoc#queryableStoreName[GlobalKTable Contract] to...FIXME.
+
+Only when <<queryable, queryable>> is enabled, `queryableStoreName` requests the <<valueGetterSupplier, KTableValueGetterSupplier>> for link:kafka-streams-internals-KTableValueGetterSupplier.adoc#storeNames[storeNames] and takes the very first one.
+
+Otherwise, `queryableStoreName` returns `null`.

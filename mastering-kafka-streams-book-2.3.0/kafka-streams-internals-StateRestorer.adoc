@@ -1,0 +1,122 @@
+== [[StateRestorer]] StateRestorer
+
+`StateRestorer` is a concrete `BatchingStateRestoreCallback` and a <<kafka-streams-StateRestoreListener.adoc#, StateRestoreListener>>.
+
+`StateRestorer` uses a <<compositeRestoreListener, CompositeRestoreListener>> to propagate the events: <<restoreStarted, restoreStarted>>, <<restoreDone, restoreDone>>, <<restoreBatchCompleted, restoreBatchCompleted>>, and <<restore, restore>>.
+
+`StateRestorer` is <<creating-instance, created>> exclusively when `ProcessorStateManager` is requested to <<kafka-streams-internals-ProcessorStateManager.adoc#register, register a state store>>.
+
+[[NO_CHECKPOINT]]
+`StateRestorer` uses `-1` as a marker for an uninitialized <<checkpoint, partition offset>>.
+
+=== [[creating-instance]] Creating StateRestorer Instance
+
+`StateRestorer` takes the following to be created:
+
+* [[partition]] Kafka https://kafka.apache.org/23/javadoc/index.html?org/apache/kafka/common/TopicPartition.html[TopicPartition]
+* [[compositeRestoreListener]] <<kafka-streams-internals-CompositeRestoreListener.adoc#, CompositeRestoreListener>>
+* [[checkpoint]] Checkpoint offset
+* [[offsetLimit]] `offsetLimit`
+* [[persistent]] `persistent` flag
+* [[storeName]] Name of the state store
+* [[recordConverter]] `RecordConverter`
+
+`StateRestorer` initializes the <<internal-properties, internal properties>>.
+
+=== [[restoreBatchCompleted]] `restoreBatchCompleted` Method
+
+[source, java]
+----
+void restoreBatchCompleted(long currentRestoredOffset, int numRestored)
+----
+
+`restoreBatchCompleted`...FIXME
+
+NOTE: `restoreBatchCompleted` is used exclusively when `StoreChangelogReader` is requested to <<kafka-streams-internals-StoreChangelogReader.adoc#processNext, processNext>> (when requested to <<kafka-streams-internals-StoreChangelogReader.adoc#restore, restore>>).
+
+=== [[restoreStarted]] `restoreStarted` Method
+
+[source, java]
+----
+void restoreStarted()
+----
+
+`restoreStarted`...FIXME
+
+NOTE: `restoreStarted` is used exclusively when `StoreChangelogReader` is requested to <<kafka-streams-internals-StoreChangelogReader.adoc#startRestoration, startRestoration>> (when requested to <<kafka-streams-internals-StoreChangelogReader.adoc#initialize, initialize>> as part of <<kafka-streams-internals-StoreChangelogReader.adoc#restore, restore>>).
+
+=== [[restoreDone]] `restoreDone` Method
+
+[source, java]
+----
+void restoreDone()
+----
+
+`restoreDone`...FIXME
+
+NOTE: `restoreDone` is used exclusively when `StoreChangelogReader` is requested to <<kafka-streams-internals-StoreChangelogReader.adoc#processNext, processNext>> (when requested to <<kafka-streams-internals-StoreChangelogReader.adoc#restore, restore>>).
+
+=== [[restore]] `restore` Method
+
+[source, java]
+----
+void restore(final Collection<KeyValue<byte[], byte[]>> records)
+----
+
+`restore`...FIXME
+
+NOTE: `restore` is used exclusively when `StoreChangelogReader` is requested to <<kafka-streams-internals-StoreChangelogReader.adoc#restore, restore>>.
+
+=== [[setUserRestoreListener]] Setting StateRestoreListener -- `setUserRestoreListener` Method
+
+[source, java]
+----
+void setUserRestoreListener(StateRestoreListener userRestoreListener)
+----
+
+`setUserRestoreListener` simply requests the <<compositeRestoreListener, CompositeRestoreListener>> to <<kafka-streams-internals-CompositeRestoreListener.adoc#setUserRestoreListener, use>> the input <<kafka-streams-StateRestoreListener.adoc#, StateRestoreListener>>.
+
+NOTE: `setUserRestoreListener` is used exclusively when `StoreChangelogReader` is requested to <<kafka-streams-internals-StoreChangelogReader.adoc#register, register a StateRestorer>>.
+
+=== [[isPersistent]] `isPersistent` Method
+
+[source, java]
+----
+boolean isPersistent()
+----
+
+`isPersistent` returns the <<persistent, persistent>> flag.
+
+NOTE: `isPersistent` is used exclusively when `StoreChangelogReader` is requested to <<kafka-streams-internals-StoreChangelogReader.adoc#restoredOffsets, restoredOffsets>>.
+
+=== [[setStartingOffset]] `setStartingOffset` Method
+
+[source, java]
+----
+void setStartingOffset(long startingOffset)
+----
+
+`setStartingOffset` simply sets the <<startingOffset, startingOffset>> internal registry to the minimum value of the <<offsetLimit, offsetLimit>> and the given `startingOffset`.
+
+NOTE: `setStartingOffset` is used when...FIXME
+
+=== [[internal-properties]] Internal Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| checkpointOffset
+a| [[checkpointOffset]][[setCheckpointOffset]] Checkpoint offset
+
+* Initialized to the given <<checkpoint, checkpoint>> if defined or <<NO_CHECKPOINT, -1>>
+
+Used when...FIXME
+
+| startingOffset
+a| [[startingOffset]]
+
+Used when...FIXME
+
+|===

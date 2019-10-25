@@ -1,0 +1,3 @@
+== [[FailOnInvalidTimestamp]] FailOnInvalidTimestamp Timestamp Extractor
+
+`FailOnInvalidTimestamp` is used as the <<kafka-streams-properties.adoc#default.timestamp.extractor, default TimestampExtractor>>.

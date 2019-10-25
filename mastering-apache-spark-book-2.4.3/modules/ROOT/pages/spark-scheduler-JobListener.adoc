@@ -1,0 +1,27 @@
+== [[JobListener]] JobListener
+
+Spark subscribes for job completion or failure events (after submitting a job to link:spark-scheduler-DAGScheduler.adoc[DAGScheduler]) using `JobListener` trait.
+
+The following are the job listeners used:
+
+1. link:spark-scheduler-JobWaiter.adoc[JobWaiter]  waits until link:spark-scheduler-DAGScheduler.adoc[DAGScheduler] completes a job and passes the results of tasks to a `resultHandler` function.
+2. `ApproximateActionListener`...FIXME
+
+An instance of `JobListener` is used in the following places:
+
+* In `ActiveJob` as a listener to notify if tasks in this job finish or the job fails.
+* In `JobSubmitted`
+
+=== [[contract]][[taskSucceeded]][[jobFailed]] `JobListener` Contract
+
+`JobListener` is a `private[spark]` contract with the following two methods:
+
+[source, scala]
+----
+private[spark] trait JobListener {
+  def taskSucceeded(index: Int, result: Any)
+  def jobFailed(exception: Exception)
+}
+----
+
+A `JobListener` object is notified each time a task succeeds (by `taskSucceeded`) and when the whole job fails (by `jobFailed`).

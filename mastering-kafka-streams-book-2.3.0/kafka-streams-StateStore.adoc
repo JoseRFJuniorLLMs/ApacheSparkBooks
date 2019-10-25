@@ -1,0 +1,143 @@
+== [[StateStore]] StateStore Contract -- State Storage Engines
+
+`StateStore` is the <<contract, contract>> of <<implementations, state storage engines>> (_state stores_) that store a state.
+
+`StateStore` can be <<persistent, persistent>> or not (i.e. *in-memory*).
+
+[[contract]]
+.StateStore Contract
+[cols="1m,3",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| close
+a| [[close]]
+
+[source, java]
+----
+void close()
+----
+
+Closes the state store
+
+Used when:
+
+* `AbstractStateManager` is requested to <<kafka-streams-internals-AbstractStateManager.adoc#reinitializeStateStoresForPartitions, reinitializeStateStoresForPartitions>>
+
+* <<kafka-streams-internals-GlobalStateManagerImpl.adoc#close, GlobalStateManagerImpl>> and <<kafka-streams-internals-ProcessorStateManager.adoc#close, ProcessorStateManager>> are requested to close
+
+* `RocksDBStore` is requested to `toggleDbForBulkLoading`
+
+* `Segments` is requested to close and cleanup
+
+| flush
+a| [[flush]]
+
+[source, java]
+----
+void flush()
+----
+
+Flushes cached data
+
+Used when:
+
+* <<kafka-streams-internals-GlobalStateManagerImpl.adoc#flush, GlobalStateManagerImpl>> and <<kafka-streams-internals-ProcessorStateManager.adoc#flush, ProcessorStateManager>> are requested to flush their state stores
+
+* <<kafka-streams-internals-CachingKeyValueStore.adoc#close, CachingKeyValueStore>>, <<kafka-streams-internals-CachingSessionStore.adoc#close, CachingSessionStore>> and <<kafka-streams-internals-CachingWindowStore.adoc#close, CachingWindowStore>> are requested to close state stores
+
+* `RocksDBSegmentedBytesStore` is requested to <<kafka-streams-internals-RocksDBSegmentedBytesStore.adoc#init, initialize the state store>>
+
+* `Segments` is requested to `flush`
+
+| init
+a| [[init]]
+
+[source, java]
+----
+void init(
+  ProcessorContext context,
+  StateStore root)
+----
+
+Initializes the state store
+
+Used when:
+
+* `AbstractStateManager` is requested to <<kafka-streams-internals-AbstractStateManager.adoc#reinitializeStateStoresForPartitions, reinitializeStateStoresForPartitions>>
+
+* `AbstractTask` is requested to <<kafka-streams-internals-AbstractTask.adoc#registerStateStores, registerStateStores>>
+
+* `GlobalStateManagerImpl` is requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#initialize, initialize>>
+
+| isOpen
+a| [[isOpen]]
+
+[source, java]
+----
+boolean isOpen()
+----
+
+Indicates whether the state store is open or not
+
+Used when:
+
+* <<kafka-streams-internals-GlobalStateStoreProvider.adoc#stores, GlobalStateStoreProvider>> and <<kafka-streams-internals-StreamThreadStateStoreProvider.adoc#stores, StreamThreadStateStoreProvider>> are requested to `stores`
+
+* `SegmentIterator` is requested to `hasNext`
+
+* `Segments` is requested to `segments` and `allSegments`
+
+| name
+a| [[name]]
+
+[source, java]
+----
+String name()
+----
+
+Name of the state store (for identification purposes)
+
+| persistent
+a| [[persistent]]
+
+[source, java]
+----
+boolean persistent()
+----
+
+Indicates whether the state store is *persistent* (`true`) or not (`false`)
+
+Used when:
+
+* `GlobalStateManagerImpl` is <<kafka-streams-internals-GlobalStateManagerImpl.adoc#creating-instance, created>>
+
+* `ProcessorStateManager` is requested to <<kafka-streams-internals-ProcessorStateManager.adoc#register, register a state store>> and <<kafka-streams-internals-ProcessorStateManager.adoc#checkpoint, checkpoint>>
+|===
+
+[[implementations]]
+.StateStores (Direct Extensions)
+[cols="1,2",options="header",width="100%"]
+|===
+| StateStore
+| Description
+
+| <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>>
+| [[KeyValueStore]]
+
+| <<kafka-streams-internals-SegmentedBytesStore.adoc#, SegmentedBytesStore>>
+| [[SegmentedBytesStore]]
+
+| <<kafka-streams-SessionStore.adoc#, SessionStore>>
+| [[SessionStore]]
+
+| <<kafka-streams-internals-TimeOrderedKeyValueBuffer.adoc#, TimeOrderedKeyValueBuffer>>
+| [[TimeOrderedKeyValueBuffer]]
+
+| <<kafka-streams-WindowStore.adoc#, WindowStore>>
+| [[WindowStore]]
+
+| <<kafka-streams-internals-WrappedStateStore.adoc#, WrappedStateStore>>
+| [[WrappedStateStore]]
+|===

@@ -1,0 +1,78 @@
+== [[RelationConversions]] RelationConversions Logical PostHoc Evaluation Rule -- Converting Hive Tables
+
+`RelationConversions` is a link:spark-sql-HiveSessionStateBuilder.adoc#postHocResolutionRules[logical posthoc resolution rule] that the link:spark-sql-HiveSessionStateBuilder.adoc#analyzer[Hive-specific logical query plan analyzer] uses to <<apply, convert a Hive table...FIXME>>.
+
+NOTE: A Hive table is when the `provider` is `hive` in link:spark-sql-LogicalPlan-HiveTableRelation.adoc#tableMeta[table metadata].
+
+CAUTION: FIXME Show example of a hive table, e.g. `spark.table(...)`
+
+`RelationConversions` is <<creating-instance, created>> exclusively when the link:spark-sql-HiveSessionStateBuilder.adoc#analyzer[Hive-specific logical query plan analyzer] is created.
+
+=== [[apply]] Executing Rule -- `apply` Method
+
+[source, scala]
+----
+apply(plan: LogicalPlan): LogicalPlan
+----
+
+NOTE: `apply` is part of the <<spark-sql-catalyst-Rule.adoc#apply, Rule Contract>> to execute (apply) a rule on a <<spark-sql-catalyst-TreeNode.adoc#, TreeNode>> (e.g. <<spark-sql-LogicalPlan.adoc#, LogicalPlan>>).
+
+`apply` traverses the input link:spark-sql-LogicalPlan.adoc[logical plan] looking for a link:spark-sql-LogicalPlan-InsertIntoTable.adoc[InsertIntoTable] with `HiveTableRelation` logical operators or `HiveTableRelation` logical operator alone.
+
+For a `InsertIntoTable` with link:spark-sql-LogicalPlan-HiveTableRelation.adoc#isPartitioned[non-partitioned] `HiveTableRelation` relation (that can be <<isConvertible, converted>>) `apply` <<convert, converts>> the `HiveTableRelation` to a `LogicalRelation`.
+
+For a `HiveTableRelation` logical operator alone `apply`...FIXME
+
+=== [[creating-instance]] Creating RelationConversions Instance
+
+`RelationConversions` takes the following when created:
+
+* [[conf]] link:spark-sql-SQLConf.adoc[SQLConf]
+* [[sessionCatalog]] link:spark-sql-HiveSessionCatalog.adoc[Hive-specific session catalog]
+
+=== [[isConvertible]] Does Table Use Parquet or ORC SerDe? -- `isConvertible` Internal Method
+
+[source, scala]
+----
+isConvertible(relation: HiveTableRelation): Boolean
+----
+
+`isConvertible` is positive when the input link:spark-sql-LogicalPlan-HiveTableRelation.adoc#tableMeta[HiveTableRelation] is a parquet or ORC table (and corresponding SQL properties are enabled).
+
+Internally, `isConvertible` takes the Hive SerDe of the table (from link:spark-sql-LogicalPlan-HiveTableRelation.adoc#tableMeta[table metadata]) if available or assumes no SerDe.
+
+`isConvertible` is turned on when either condition holds:
+
+* The Hive SerDe is `parquet` (aka _parquet table_) and link:spark-sql-properties.adoc#spark.sql.hive.convertMetastoreParquet[spark.sql.hive.convertMetastoreParquet] configuration property is enabled (which is by default)
+
+* The Hive SerDe is `orc` (aka _orc table_) and link:spark-sql-properties.adoc#spark.sql.hive.convertMetastoreOrc[spark.sql.hive.convertMetastoreOrc] internal configuration property is enabled (which is by default)
+
+NOTE: `isConvertible` is used when `RelationConversions` is <<apply, executed>>.
+
+=== [[convert]] Converting HiveTableRelation to LogicalRelation -- `convert` Internal Method
+
+[source, scala]
+----
+convert(relation: HiveTableRelation): LogicalRelation
+----
+
+`convert` takes SerDe of (the storage of) the input link:spark-sql-LogicalPlan-HiveTableRelation.adoc[HiveTableRelation] and converts `HiveTableRelation` to link:spark-sql-LogicalPlan-LogicalRelation.adoc[LogicalRelation], i.e.
+
+1. For `parquet` serde, `convert` adds `mergeSchema` option being the value of link:spark-sql-properties.adoc#spark.sql.hive.convertMetastoreParquet.mergeSchema[spark.sql.hive.convertMetastoreParquet.mergeSchema] configuration property (disabled by default) and requests `HiveMetastoreCatalog` to link:spark-sql-HiveMetastoreCatalog.adoc#convertToLogicalRelation[convertToLogicalRelation] (with link:spark-sql-ParquetFileFormat.adoc[ParquetFileFormat] as `fileFormatClass`).
+
+For non-`parquet` serde, `convert` assumes ORC format.
+
+* When link:spark-sql-properties.adoc#spark.sql.orc.impl[spark.sql.orc.impl] configuration property is `native` (default) `convert` requests `HiveMetastoreCatalog` to link:spark-sql-HiveMetastoreCatalog.adoc#convertToLogicalRelation[convertToLogicalRelation] (with `org.apache.spark.sql.execution.datasources.orc.OrcFileFormat` as `fileFormatClass`).
+
+* Otherwise, `convert` requests `HiveMetastoreCatalog` to link:spark-sql-HiveMetastoreCatalog.adoc#convertToLogicalRelation[convertToLogicalRelation] (with `org.apache.spark.sql.hive.orc.OrcFileFormat` as `fileFormatClass`).
+
+NOTE: `convert` uses <<sessionCatalog, HiveSessionCatalog>> to access the link:spark-sql-HiveSessionCatalog.adoc#metastoreCatalog[HiveMetastoreCatalog].
+
+[NOTE]
+====
+`convert` is used when `RelationConversions` logical evaluation rule does the following transformations:
+
+* Transforms a link:spark-sql-LogicalPlan-InsertIntoTable.adoc[InsertIntoTable] with `HiveTableRelation` with a Hive table (i.e. with `hive` provider) that is not partitioned and uses `parquet` or `orc` data storage format
+
+* Transforms a link:spark-sql-LogicalPlan-HiveTableRelation.adoc[HiveTableRelation] with a Hive table (i.e. with `hive` provider) that uses `parquet` or `orc` data storage format
+====

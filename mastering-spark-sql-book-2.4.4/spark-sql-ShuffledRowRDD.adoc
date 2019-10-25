@@ -1,0 +1,91 @@
+== [[ShuffledRowRDD]] ShuffledRowRDD
+
+`ShuffledRowRDD` is an `RDD` of link:spark-sql-InternalRow.adoc[internal binary rows] (i.e. `RDD[InternalRow]`) that is <<creating-instance, created>> when:
+
+* `ShuffleExchangeExec` physical operator is requested to <<spark-sql-SparkPlan-ShuffleExchangeExec.adoc#preparePostShuffleRDD, preparePostShuffleRDD>>
+
+* `CollectLimitExec` and `TakeOrderedAndProjectExec` physical operators are requested to `doExecute`
+
+[[creating-instance]]
+`ShuffledRowRDD` takes the following to be created:
+
+* [[dependency]] `ShuffleDependency[Int, InternalRow, InternalRow]`
+* [[specifiedPartitionStartIndices]] Optional *partition start indices* (`Option[Array[Int]]` , default: `None`)
+
+NOTE: The <<dependency, dependency>> property is mutable so it can be <<clearDependencies, cleared>>.
+
+`ShuffledRowRDD` takes an optional <<specifiedPartitionStartIndices, partition start indices>> that is the number of post-shuffle partitions. When not specified (when executing `CollectLimitExec` and `TakeOrderedAndProjectExec` physical operators), the number of post-shuffle partitions is managed by the link:spark-rdd-Partitioner.adoc[Partitioner] of the input `ShuffleDependency`. Otherwise, when specified (when `ExchangeCoordinator` is requested to <<spark-sql-ExchangeCoordinator.adoc#doEstimationIfNecessary, doEstimationIfNecessary>>), `ShuffledRowRDD`...FIXME
+
+NOTE: *Post-shuffle partition* is...FIXME
+
+NOTE: `ShuffledRowRDD` looks like link:spark-rdd-ShuffledRDD.adoc[ShuffledRDD], and the difference is in the type of the values to process, i.e. link:spark-sql-InternalRow.adoc[InternalRow] and `(K, C)` key-value pairs, respectively.
+
+.ShuffledRowRDD and RDD Contract
+[cols="1,3",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| `getDependencies`
+| A single-element collection with `ShuffleDependency[Int, InternalRow, InternalRow]`.
+
+| `partitioner`
+| <<CoalescedPartitioner, CoalescedPartitioner>> (with the link:spark-rdd-Partitioner.adoc[Partitioner] of the `dependency`)
+
+| <<getPreferredLocations, getPreferredLocations>>
+|
+
+| <<compute, compute>>
+|
+|===
+
+=== [[numPreShufflePartitions]] `numPreShufflePartitions` Property
+
+CAUTION: FIXME
+
+=== [[compute]] Computing Partition (in TaskContext) -- `compute` Method
+
+[source, scala]
+----
+compute(split: Partition, context: TaskContext): Iterator[InternalRow]
+----
+
+NOTE: `compute` is part of Spark Core's `RDD` Contract to compute a partition (in a `TaskContext`).
+
+Internally, `compute` makes sure that the input `split` is a <<ShuffledRowRDDPartition, ShuffledRowRDDPartition>>. It then link:spark-ShuffleManager.adoc#contract[requests `ShuffleManager` for a `ShuffleReader`] to read ``InternalRow``s for the `split`.
+
+NOTE: `compute` uses link:spark-sparkenv.adoc#shuffleManager[`SparkEnv` to access the current `ShuffleManager`].
+
+NOTE: `compute` uses `ShuffleHandle` (of link:spark-rdd-ShuffleDependency.adoc[ShuffleDependency] dependency) and the pre-shuffle start and end partition offsets.
+
+=== [[getPreferredLocations]] Getting Placement Preferences of Partition -- `getPreferredLocations` Method
+
+[source, scala]
+----
+getPreferredLocations(partition: Partition): Seq[String]
+----
+
+NOTE: `getPreferredLocations` is part of link:spark-rdd.adoc#contract[RDD contract] to specify placement preferences (aka _preferred task locations_), i.e. where tasks should be executed to be as close to the data as possible.
+
+Internally, `getPreferredLocations` requests link:spark-service-MapOutputTrackerMaster.adoc#getPreferredLocationsForShuffle[`MapOutputTrackerMaster` for the preferred locations] of the input `partition` (for the single link:spark-rdd-ShuffleDependency.adoc[ShuffleDependency]).
+
+NOTE: `getPreferredLocations` uses link:spark-sparkenv.adoc#mapOutputTracker[`SparkEnv` to access the current `MapOutputTrackerMaster`] (which runs on the driver).
+
+=== [[CoalescedPartitioner]] `CoalescedPartitioner`
+
+CAUTION: FIXME
+
+=== [[ShuffledRowRDDPartition]] `ShuffledRowRDDPartition`
+
+CAUTION: FIXME
+
+=== [[clearDependencies]] Clearing Dependencies -- `clearDependencies` Method
+
+[source, scala]
+----
+clearDependencies(): Unit
+----
+
+NOTE: `clearDependencies` is part of the RDD Contract to clear dependencies of the RDD (to enable the parent RDDs to be garbage collected).
+
+`clearDependencies` simply requests the parent RDD to `clearDependencies` followed by clear the given <<dependency, dependency>> (i.e. set to `null`).

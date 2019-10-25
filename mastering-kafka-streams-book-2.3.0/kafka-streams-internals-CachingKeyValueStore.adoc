@@ -1,0 +1,112 @@
+== [[CachingKeyValueStore]] CachingKeyValueStore
+
+`CachingKeyValueStore` is a concrete <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> of `Bytes` keys and `byte[]` values (i.e. `KeyValueStore<Bytes, byte[]>`).
+
+`CachingKeyValueStore` is also a concrete <<kafka-streams-internals-WrappedStateStore.adoc#, WrappedStateStore>> of <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> of `Bytes` keys and `byte[]` values (i.e. `WrappedStateStore<KeyValueStore<Bytes, byte[]>, byte[], byte[]>`).
+
+`CachingKeyValueStore` is a concrete <<kafka-streams-internals-CachedStateStore.adoc#, CachedStateStore>>.
+
+`CachingKeyValueStore` is <<creating-instance, created>> when:
+
+* `KeyValueStoreBuilder` is requested to <<kafka-streams-internals-KeyValueStoreBuilder.adoc#build, build a KeyValueStore>> with <<kafka-streams-internals-AbstractStoreBuilder.adoc#withCachingEnabled, caching enabled>>
+
+* `TimestampedKeyValueStoreBuilder` is requested to <<kafka-streams-internals-TimestampedKeyValueStoreBuilder.adoc#build, build a TimestampedKeyValueStore>> with <<kafka-streams-internals-AbstractStoreBuilder.adoc#withCachingEnabled, caching enabled>>
+
+[[creating-instance]][[underlying]]
+`CachingKeyValueStore` takes a single <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> (_underlying state store_) to be created.
+
+=== [[init]] Initializing State Store -- `init` Method
+
+[source, java]
+----
+void init(
+  ProcessorContext context,
+  StateStore root)
+----
+
+NOTE: `init` is part of the <<kafka-streams-StateStore.adoc#init, StateStore Contract>> to initialize the state store.
+
+`init` <<initInternal, initInternal>> with the <<kafka-streams-ProcessorContext.adoc#, ProcessorContext>>.
+
+`init` then requests the <<underlying, underlying KeyValueStore>> to <<kafka-streams-internals-WrappedStateStore.adoc#init, initialize>>.
+
+In the end, `init` saves the current thread as the <<streamThread, streamThread>> internal registry.
+
+==== [[initInternal]] `initInternal` Internal Method
+
+[source, java]
+----
+void initInternal(ProcessorContext context)
+----
+
+`initInternal` saves the <<kafka-streams-ProcessorContext.adoc#, ProcessorContext>> as the <<context, context>> internal registry.
+
+`initInternal` requests the <<context, InternalProcessorContext>> for a <<kafka-streams-internals-InternalProcessorContext.adoc#getCache, ThreadCache>> that is saved as the <<cache, cache>> internal registry.
+
+`initInternal` <<kafka-streams-internals-ThreadCache.adoc#nameSpaceFromTaskIdAndStore, creates the name of the cache>> for the task ID and the store name and that is saved as the <<cacheName, cacheName>> internal registry.
+
+In the end, `initInternal` requests the <<cache, ThreadCache>> to <<kafka-streams-internals-ThreadCache.adoc#addDirtyEntryFlushListener, addDirtyEntryFlushListener>> with the cache name and a `DirtyEntryFlushListener` that simply <<putAndMaybeForward, putAndMaybeForward>> the `DirtyEntries`.
+
+NOTE: `initInternal` is used exclusively when `CachingKeyValueStore` is requested to <<init, initialize>>.
+
+==== [[putAndMaybeForward]] `putAndMaybeForward` Internal Method
+
+[source, java]
+----
+void putAndMaybeForward(
+  ThreadCache.DirtyEntry entry,
+  InternalProcessorContext context)
+----
+
+`putAndMaybeForward`...FIXME
+
+NOTE: `putAndMaybeForward` is used exclusively when `CachingKeyValueStore` is requested to <<init, initialize>> (via <<initInternal, initInternal>>).
+
+=== [[remove]] `remove` Method
+
+[source, java]
+----
+void remove(final Windowed<Bytes> sessionKey)
+----
+
+NOTE: `remove` is part of link:kafka-streams-SessionStore.adoc#remove[SessionStore Contract] to...FIXME.
+
+`remove`...FIXME
+
+=== [[close]] Closing State Store -- `close` Method
+
+[source, java]
+----
+void close()
+----
+
+NOTE: `close` is part of...FIXME
+
+`close`...FIXME
+
+=== [[internal-properties]] Internal Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| cache
+a| [[cache]] <<kafka-streams-internals-ThreadCache.adoc#, ThreadCache>>
+
+Used when...FIXME
+
+| cacheName
+a| [[cacheName]]
+
+| context
+a| [[context]] <<kafka-streams-internals-InternalProcessorContext.adoc#, InternalProcessorContext>>
+
+Used when...FIXME
+
+| streamThread
+a| [[streamThread]] Thread
+
+Used when...FIXME
+
+|===

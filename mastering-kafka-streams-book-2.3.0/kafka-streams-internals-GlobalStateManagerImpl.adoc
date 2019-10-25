@@ -1,0 +1,103 @@
+== [[GlobalStateManagerImpl]] GlobalStateManagerImpl
+
+`GlobalStateManagerImpl` is a concrete <<kafka-streams-internals-GlobalStateManager.adoc#, GlobalStateManager>> (and a <<kafka-streams-internals-AbstractStateManager.adoc#, AbstractStateManager>>) that...FIXME
+
+`GlobalStateManagerImpl` is <<creating-instance, created>> exclusively when `GlobalStreamThread` is requested to <<kafka-streams-internals-GlobalStreamThread.adoc#initialize, initialize>> (when `GlobalStreamThread` is <<kafka-streams-internals-GlobalStreamThread.adoc#run, started>> with <<kafka-streams-KafkaStreams.adoc#start, KafkaStreams>>).
+
+=== [[initialize]] `initialize` Method
+
+[source, java]
+----
+Set<String> initialize()
+----
+
+NOTE: `initialize` is part of link:kafka-streams-internals-GlobalStateManager.adoc#initialize[GlobalStateManager Contract] to...FIXME.
+
+`initialize`...FIXME
+
+=== [[checkpoint]] `checkpoint` Method
+
+[source, java]
+----
+void checkpoint(final Map<TopicPartition, Long> offsets)
+----
+
+NOTE: `checkpoint` is part of link:kafka-streams-internals-Checkpointable.adoc#checkpoint[Checkpointable Contract] to...FIXME.
+
+`checkpoint`...FIXME
+
+=== [[creating-instance]] Creating GlobalStateManagerImpl Instance
+
+`GlobalStateManagerImpl` takes the following when created:
+
+* [[logContext]] `LogContext`
+* [[topology]] <<kafka-streams-internals-ProcessorTopology.adoc#, ProcessorTopology>>
+* [[globalConsumer]] (Global) Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html[Consumer] (`Consumer<byte[], byte[]>`)
+* [[stateDirectory]] <<kafka-streams-internals-StateDirectory.adoc#, StateDirectory>>
+* [[stateRestoreListener]] <<kafka-streams-StateRestoreListener.adoc#, StateRestoreListener>>
+* [[config]] <<kafka-streams-StreamsConfig.adoc#, StreamsConfig>>
+
+`GlobalStateManagerImpl` initializes the <<internal-registries, internal registries and counters>>.
+
+=== [[reinitializeStateStoresForPartitions]] `reinitializeStateStoresForPartitions` Method
+
+[source, java]
+----
+void reinitializeStateStoresForPartitions(
+  final Collection<TopicPartition> partitions,
+  final InternalProcessorContext processorContext)
+----
+
+NOTE: `reinitializeStateStoresForPartitions` is part of <<kafka-streams-internals-StateManager.adoc#reinitializeStateStoresForPartitions, StateManager Contract>> to...FIXME.
+
+`reinitializeStateStoresForPartitions`...FIXME
+
+=== [[flush]] Flushing All State Stores -- `flush` Method
+
+[source, java]
+----
+void flush()
+----
+
+NOTE: `flush` is part of the <<kafka-streams-internals-StateManager.adoc#flush, StateManager Contract>> to flush all <<kafka-streams-StateStore.adoc#, state stores>> registered with the state manager.
+
+`flush`...FIXME
+
+=== [[restoreState]] `restoreState` Internal Method
+
+[source, java]
+----
+void restoreState(
+  StateRestoreCallback stateRestoreCallback,
+  List<TopicPartition> topicPartitions,
+  Map<TopicPartition, Long> highWatermarks,
+  String storeName)
+----
+
+`restoreState`...FIXME
+
+NOTE: `restoreState` is used exclusively when `GlobalStateManagerImpl` is requested to <<register, register a state store>>.
+
+=== [[register]] Registering State Store -- `register` Method
+
+[source, scala]
+----
+void register(
+  final StateStore store,
+  final StateRestoreCallback stateRestoreCallback)
+----
+
+NOTE: `register` is part of the <<kafka-streams-internals-StateManager.adoc#register, StateManager Contract>> to register a <<kafka-streams-StateStore.adoc#, state store>>.
+
+`register`...FIXME
+
+=== [[close]] Closing State Manager -- `close` Method
+
+[source, scala]
+----
+void close(final Map<TopicPartition, Long> offsets) throws IOException
+----
+
+NOTE: `close` is part of the <<kafka-streams-internals-StateManager.adoc#close, StateManager Contract>> to close the state manager.
+
+`close`...FIXME

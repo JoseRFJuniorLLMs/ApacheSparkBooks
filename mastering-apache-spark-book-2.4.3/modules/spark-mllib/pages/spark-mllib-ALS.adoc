@@ -1,0 +1,281 @@
+== [[ALS]] ALS -- Estimator for ALSModel
+
+`ALS` is an link:spark-mllib-estimators.adoc[Estimator] that <<fit, generates a ALSModel>>.
+
+`ALS` uses `als-[random-numbers]` for the default identifier.
+
+`ALS` can be fine-tuned using <<ALSParams, parameters>>.
+
+[[ALSParams]]
+.ALS's Parameters (aka ALSParams)
+[cols="1,1,2",options="header",width="100%"]
+|===
+| Parameter
+| Default Value
+| Description
+
+| [[alpha]] `alpha`
+| `1.0`
+| Alpha constant in the implicit preference formulation
+
+Must be non-negative, i.e. at least `0`.
+
+Used when ALS <<train, trains a model>> (and <<computeFactors, computes factors>> for users and items datasets) with <<implicitPrefs, implicit preference>> enabled (which is disabled by default)
+
+| [[checkpointInterval]] `checkpointInterval`
+| `10`
+| Checkpoint interval, i.e. how many iterations between checkpoints.
+
+Must be at least `1` or exactly `-1` to disable checkpointing
+
+| [[coldStartStrategy]] `coldStartStrategy`
+| `nan`
+a| Strategy for dealing with unknown or new users/items at prediction time, i.e. what happens for user or item ids the model has not seen in the training data.
+
+Supported values:
+
+* `nan` - predicted value for unknown ids will be NaN
+* `drop` - rows in the input DataFrame containing unknown ids are dropped from the output DataFrame (with predictions).
+
+| [[finalStorageLevel]] `finalStorageLevel`
+| link:../spark-rdd-StorageLevel.adoc#MEMORY_AND_DISK[MEMORY_AND_DISK]
+| link:../spark-rdd-StorageLevel.adoc[StorageLevel] for ALS model factors
+
+| [[implicitPrefs]] `implicitPrefs`
+| `false`
+| Flag to turn implicit preference on (`true`) or off (`false`)
+
+| [[intermediateStorageLevel]] `intermediateStorageLevel`
+| link:../spark-rdd-StorageLevel.adoc#MEMORY_AND_DISK[MEMORY_AND_DISK]
+| link:../spark-rdd-StorageLevel.adoc[StorageLevel] for intermediate datasets. Must not be `NONE`.
+
+| [[itemCol]] `itemCol`
+| `item`
+| Column name for item ids
+
+Must be all integers or link:../spark-sql-DataType.adoc[numerics] within the integer value range
+
+| [[maxIter]] `maxIter`
+| `10`
+| Maximum number of iterations
+
+Must be non-negative, i.e. at least `0`.
+
+| [[nonnegative]] `nonnegative`
+| Disabled (`false`)
+| Flag to decide whether to apply nonnegativity constraints for least squares.
+
+| [[numUserBlocks]] `numUserBlocks`
+| `10`
+| Number of user blocks
+
+Has to be at least `1`.
+
+| [[numItemBlocks]] `numItemBlocks`
+| `10`
+| Number of item blocks
+
+Has to be at least `1`.
+
+| [[predictionCol]] `predictionCol`
+| `prediction`
+a| Column name for predictions
+
+* The main purpose of the estimator
+* Of type `FloatType`
+
+| [[rank]] `rank`
+| `10`
+| Rank of the matrix factorization
+
+Has to be at least `1`.
+
+| [[ratingCol]] `ratingCol`
+| `rating`
+a| Column name for ratings
+
+Must be all integers or link:../spark-sql-DataType.adoc[numerics] within the integer value range
+
+* <<fit, Cast>> to `FloatType`
+* Set to `1.0` when undefined
+
+| [[regParam]] `regParam`
+| `10`
+| Regularization parameter
+
+Must be non-negative, i.e. at least `0`.
+
+| [[seed]] `seed`
+| Randomly-generated
+| Random seed
+
+| [[userCol]] `userCol`
+| `user`
+| Column name for user ids
+
+Must be all integers or link:../spark-sql-DataType.adoc[numerics] within the integer value range
+|===
+
+=== [[computeFactors]] `computeFactors` Internal Method
+
+[source, scala]
+----
+computeFactors[ID](
+  srcFactorBlocks: RDD[(Int, FactorBlock)],
+  srcOutBlocks: RDD[(Int, OutBlock)],
+  dstInBlocks: RDD[(Int, InBlock[ID])],
+  rank: Int,
+  regParam: Double,
+  srcEncoder: LocalIndexEncoder,
+  implicitPrefs: Boolean = false,
+  alpha: Double = 1.0,
+  solver: LeastSquaresNESolver): RDD[(Int, FactorBlock)]
+----
+
+`computeFactors`...FIXME
+
+NOTE: `computeFactors` is used when...FIXME
+
+=== [[fit]] Fitting ALSModel -- `fit` Method
+
+[source, scala]
+----
+fit(dataset: Dataset[_]): ALSModel
+----
+
+Internally, `fit` <<transformSchema, validates the schema>> of the `dataset` (to make sure that the types of the columns are correct and the *prediction* column is not available yet).
+
+`fit` casts the *rating* column (as defined using <<ratingCol, ratingCol>> parameter) to `FloatType`.
+
+`fit` selects <<userCol, user>>, <<itemCol, item>> and <<ratingCol, rating>> columns (from the `dataset`) and converts it to `RDD` of `Rating` instances.
+
+NOTE: `fit` converts the `dataset` to `RDD` using link:../spark-sql-dataset-operators.adoc#rdd[rdd] operator.
+
+`fit` prints out the training parameters as INFO message to the logs:
+
+```
+INFO ...FIXME
+```
+
+`fit` <<train, trains a model>>, i.e. generates a pair of RDDs of user and item factors.
+
+`fit` converts the RDDs with user and item factors to corresponding DataFrames with `id` and `features` columns.
+
+`fit` link:spark-mllib-ALSModel.adoc#creating-instance[creates] a `ALSModel`.
+
+`fit` prints out the following INFO message to the logs:
+
+```
+INFO training finished
+```
+
+CAUTION: FIXME Check out the log
+
+In the end, `fit` copies parameter values to the `ALSModel` model.
+
+CAUTION: FIXME Why is the copying necessary?
+
+=== [[partitionRatings]] `partitionRatings` Internal Method
+
+[source, scala]
+----
+partitionRatings[ID](
+  ratings: RDD[Rating[ID]],
+  srcPart: Partitioner,
+  dstPart: Partitioner): RDD[((Int, Int), RatingBlock[ID])]
+----
+
+`partitionRatings`...FIXME
+
+NOTE: `partitionRatings` is used when...FIXME
+
+=== [[makeBlocks]] `makeBlocks` Internal Method
+
+[source, scala]
+----
+makeBlocks[ID](
+  prefix: String,
+  ratingBlocks: RDD[((Int, Int), RatingBlock[ID])],
+  srcPart: Partitioner,
+  dstPart: Partitioner,
+  storageLevel: StorageLevel)(
+  implicit srcOrd: Ordering[ID]): (RDD[(Int, InBlock[ID])], RDD[(Int, OutBlock)])
+----
+
+`makeBlocks`...FIXME
+
+NOTE: `makeBlocks` is used when...FIXME
+
+=== [[train]] `train` Method
+
+[source, scala]
+----
+train[ID](
+  ratings: RDD[Rating[ID]],
+  rank: Int = 10,
+  numUserBlocks: Int = 10,
+  numItemBlocks: Int = 10,
+  maxIter: Int = 10,
+  regParam: Double = 0.1,
+  implicitPrefs: Boolean = false,
+  alpha: Double = 1.0,
+  nonnegative: Boolean = false,
+  intermediateRDDStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK,
+  finalRDDStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK,
+  checkpointInterval: Int = 10,
+  seed: Long = 0L)(
+  implicit ord: Ordering[ID]): (RDD[(ID, Array[Float])], RDD[(ID, Array[Float])])
+----
+
+`train` first creates
+
+`train` <<partitionRatings, partition the ratings RDD>> (using two link:../spark-rdd-HashPartitioner.adoc[HashPartitioners] with <<numUserBlocks, numUserBlocks>> and <<numItemBlocks, numItemBlocks>> partitions) and immediately link:../spark-rdd-caching.adoc#persist[persists] the RDD per `intermediateRDDStorageLevel` storage level.
+
+`train` <<makeBlocks, creates a pair of user in and out block RDDs>> for `blockRatings`.
+
+`train` triggers caching.
+
+NOTE: `train` uses a Spark idiom to trigger caching by counting the elements of an RDD.
+
+`train` swaps users and items to create a `swappedBlockRatings` RDD.
+
+`train` <<makeBlocks, creates a pair of user in and out block RDDs>> for the `swappedBlockRatings` RDD.
+
+`train` triggers caching.
+
+`train` creates `LocalIndexEncoders` for user and item `HashPartitioner` partitioners.
+
+CAUTION: FIXME `train` gets too "heavy", i.e. advanced. Gave up for now. Sorry.
+
+`train` throws a `IllegalArgumentException` when `ratings` is empty.
+
+```
+requirement failed: No ratings available from [ratings]
+```
+`train` throws a `IllegalArgumentException` when `intermediateRDDStorageLevel` is `NONE`.
+
+```
+requirement failed: ALS is not designed to run without persisting intermediate RDDs.
+```
+
+NOTE: `train` is used when...FIXME
+
+=== [[validateAndTransformSchema]] `validateAndTransformSchema` Internal Method
+
+[source, scala]
+----
+validateAndTransformSchema(schema: StructType): StructType
+----
+
+`validateAndTransformSchema`...FIXME
+
+NOTE: `validateAndTransformSchema` is used exclusively when `ALS` is requested to <<transformSchema, transform a dataset schema>>.
+
+=== [[transformSchema]] Transforming Dataset Schema -- `transformSchema` Method
+
+[source, scala]
+----
+transformSchema(schema: StructType): StructType
+----
+
+Internally, `transformSchema`...FIXME

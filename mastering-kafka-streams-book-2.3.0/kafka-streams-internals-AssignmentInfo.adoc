@@ -1,0 +1,119 @@
+== [[AssignmentInfo]] AssignmentInfo
+
+`AssignmentInfo` is...FIXME
+
+=== [[decode]] Decoding User Data -- `decode` Static Method
+
+[source, java]
+----
+static AssignmentInfo decode(ByteBuffer data)
+----
+
+`decode`...FIXME
+
+NOTE: `decode` is used exclusively when `StreamsPartitionAssignor` is requested to <<kafka-streams-internals-StreamsPartitionAssignor.adoc#onAssignment, handle partition assignment from the group leader>>.
+
+=== [[decodeVersionOneData]] `decodeVersionOneData` Internal Static Method
+
+[source, java]
+----
+static void decodeVersionOneData(
+  final AssignmentInfo assignmentInfo,
+  final DataInputStream in) throws IOException
+----
+
+`decodeVersionOneData`...FIXME
+
+NOTE: `decodeVersionOneData` is used exclusively when `AssignmentInfo` is requested to <<decode, decode the user data>>.
+
+=== [[encodeActiveAndStandbyTaskAssignment]] `encodeActiveAndStandbyTaskAssignment` Internal Method
+
+[source, java]
+----
+void encodeActiveAndStandbyTaskAssignment(final DataOutputStream out)
+----
+
+`encodeActiveAndStandbyTaskAssignment`...FIXME
+
+NOTE: `encodeActiveAndStandbyTaskAssignment` is used when `AssignmentInfo` is requested to <<encodeVersionOne, encodeVersionOne>>, <<encodeVersionTwo, encodeVersionTwo>>, <<encodeVersionThree, encodeVersionThree>>, and <<encodeVersionFour, encodeVersionFour>>.
+
+=== [[decodeActiveTasks]] `decodeActiveTasks` Internal Factory Method
+
+[source, java]
+----
+static void decodeActiveTasks(
+  final AssignmentInfo assignmentInfo,
+  final DataInputStream in)
+----
+
+`decodeActiveTasks`...FIXME
+
+NOTE: `decodeActiveTasks` is used when...FIXME
+
+=== [[decodeStandbyTasks]] `decodeStandbyTasks` Internal Factory Method
+
+[source, java]
+----
+static void decodeStandbyTasks(
+  final AssignmentInfo assignmentInfo,
+  final DataInputStream in)
+----
+
+`decodeStandbyTasks`...FIXME
+
+NOTE: `decodeStandbyTasks` is used when...FIXME
+
+=== [[encodeVersionFour]] `encodeVersionFour` Internal Method
+
+[source, java]
+----
+void encodeVersionFour(final DataOutputStream out)
+----
+
+`encodeVersionFour`...FIXME
+
+NOTE: `encodeVersionFour` is used exclusively when `AssignmentInfo` is requested to <<encode, encode>> (for the <<usedVersion, metadata version>> as `4`).
+
+=== [[encodeVersionThree]] `encodeVersionThree` Internal Method
+
+[source, java]
+----
+void encodeVersionThree(final DataOutputStream out)
+----
+
+`encodeVersionThree`...FIXME
+
+NOTE: `encodeVersionThree` is used when...FIXME
+
+=== [[encodeVersionTwo]] `encodeVersionTwo` Internal Method
+
+[source, java]
+----
+void encodeVersionTwo(final DataOutputStream out)
+----
+
+`encodeVersionTwo`...FIXME
+
+NOTE: `encodeVersionTwo` is used when...FIXME
+
+=== [[encodeVersionOne]] `encodeVersionOne` Internal Method
+
+[source, java]
+----
+void encodeVersionOne(final DataOutputStream out)
+----
+
+`encodeVersionOne`...FIXME
+
+NOTE: `encodeVersionOne` is used when...FIXME
+
+=== [[encode]] `encode` Method
+
+[source, java]
+----
+ByteBuffer encode()
+----
+
+`encode`...FIXME
+
+NOTE: `encode` is used exclusively when `StreamsPartitionAssignor` is requested to <<kafka-streams-internals-StreamsPartitionAssignor.adoc#errorAssignment, errorAssignment>>, <<kafka-streams-internals-StreamsPartitionAssignor.adoc#computeNewAssignment, computeNewAssignment>>, and <<kafka-streams-internals-StreamsPartitionAssignor.adoc#versionProbingAssignment, versionProbingAssignment>>.

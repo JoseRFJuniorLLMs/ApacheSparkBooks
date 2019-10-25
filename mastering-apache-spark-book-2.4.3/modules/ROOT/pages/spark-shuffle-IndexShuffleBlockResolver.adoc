@@ -1,0 +1,207 @@
+== [[IndexShuffleBlockResolver]] IndexShuffleBlockResolver
+
+`IndexShuffleBlockResolver` is a concrete <<spark-shuffle-ShuffleBlockResolver.adoc#, ShuffleBlockResolver>> that manages shuffle block data and uses *shuffle index files* for faster shuffle data access.
+
+`IndexShuffleBlockResolver` can <<writeIndexFileAndCommit, write>>, <<getBlockData, look up>> and <<removeDataByMap, remove>> shuffle block index and data files (given shuffle and
+map IDs).
+
+`IndexShuffleBlockResolver` is <<creating-instance, created>> and managed exclusively by <<spark-shuffle-SortShuffleManager.adoc#shuffleBlockResolver, SortShuffleManager>> (so it link:spark-shuffle-ShuffleManager.adoc#shuffleBlockResolver[can access shuffle block data]).
+
+.SortShuffleManager creates IndexShuffleBlockResolver
+image::spark-IndexShuffleBlockResolver-SortShuffleManager.png[align="center"]
+
+`IndexShuffleBlockResolver` is later used to create the <<spark-shuffle-SortShuffleManager.adoc#getWriter, ShuffleWriter>> given a <<spark-shuffle-ShuffleHandle.adoc#, ShuffleHandle>>.
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.spark.shuffle.IndexShuffleBlockResolver` logger to see what happens inside.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.shuffle.IndexShuffleBlockResolver=ALL
+```
+
+Refer to <<spark-logging.adoc#, Logging>>.
+====
+
+=== [[creating-instance]] Creating IndexShuffleBlockResolver Instance
+
+`IndexShuffleBlockResolver` takes the following to be created:
+
+* [[conf]] <<spark-SparkConf.adoc#, SparkConf>>
+* [[_blockManager]][[blockManager]] <<spark-BlockManager.adoc#, BlockManager>>
+
+`IndexShuffleBlockResolver` initializes the <<internal-properties, internal properties>>.
+
+=== [[writeIndexFileAndCommit]] Writing Shuffle Index and Data Files -- `writeIndexFileAndCommit` Method
+
+[source, scala]
+----
+writeIndexFileAndCommit(
+  shuffleId: Int,
+  mapId: Int,
+  lengths: Array[Long],
+  dataTmp: File): Unit
+----
+
+Internally, `writeIndexFileAndCommit` first <<getIndexFile, finds the index file>> for the input `shuffleId` and `mapId`.
+
+`writeIndexFileAndCommit` creates a temporary file for the index file (in the same directory) and writes offsets (as the moving sum of the input `lengths` starting from 0 to the final offset at the end for the end of the output file).
+
+NOTE: The offsets are the sizes in the input `lengths` exactly.
+
+.writeIndexFileAndCommit and offsets in a shuffle index file
+image::spark-IndexShuffleBlockResolver-writeIndexFileAndCommit.png[align="center"]
+
+`writeIndexFileAndCommit` <<getDataFile, requests a shuffle block data file>> for the input `shuffleId` and `mapId`.
+
+`writeIndexFileAndCommit` <<checkIndexAndDataFile, checks if the given index and data files match each other>> (aka _consistency check_).
+
+If the consistency check fails, it means that another attempt for the same task has already written the map outputs successfully and so the input `dataTmp` and temporary index files are deleted (as no longer correct).
+
+If the consistency check succeeds, the existing index and data files are deleted (if they exist) and the temporary index and data files become "official", i.e. renamed to their final names.
+
+In case of any IO-related exception, `writeIndexFileAndCommit` throws a `IOException` with the messages:
+
+```
+fail to rename file [indexTmp] to [indexFile]
+```
+
+or
+
+```
+fail to rename file [dataTmp] to [dataFile]
+```
+
+NOTE: `writeIndexFileAndCommit` is used when link:spark-shuffle-ShuffleWriter.adoc[ShuffleWriters] are requested to write records to a shuffle system, i.e. link:spark-shuffle-SortShuffleWriter.adoc#write[SortShuffleWriter], link:spark-shuffle-BypassMergeSortShuffleWriter.adoc#write[BypassMergeSortShuffleWriter], and link:spark-shuffle-UnsafeShuffleWriter.adoc#closeAndWriteOutput[UnsafeShuffleWriter].
+
+=== [[getBlockData]] Creating ManagedBuffer to Read Shuffle Block Data File -- `getBlockData` Method
+
+[source, scala]
+----
+getBlockData(blockId: ShuffleBlockId): ManagedBuffer
+----
+
+NOTE: `getBlockData` is part of link:spark-rdd.adoc#contract[ShuffleBlockResolver contract].
+
+Internally, `getBlockData` <<getIndexFile, finds the index file>> for the input shuffle `blockId`.
+
+NOTE: link:spark-BlockDataManager.adoc#ShuffleBlockId[ShuffleBlockId] knows `shuffleId` and `mapId`.
+
+`getBlockData` discards `blockId.reduceId` bytes of data from the index file.
+
+NOTE: `getBlockData` uses Guava's link:++https://google.github.io/guava/releases/snapshot/api/docs/com/google/common/io/ByteStreams.html#skipFully-java.io.InputStream-long-++[com.google.common.io.ByteStreams] to skip the bytes.
+
+`getBlockData` reads the start and end offsets from the index file and then creates a `FileSegmentManagedBuffer` to read the <<getDataFile, data file>> for the offsets (using <<transportConf, transportConf>> internal property).
+
+NOTE: The start and end offsets are the offset and the length of the file segment for the block data.
+
+In the end, `getBlockData` closes the index file.
+
+=== [[checkIndexAndDataFile]] Checking Consistency of Shuffle Index and Data Files and Returning Block Lengths --  `checkIndexAndDataFile` Internal Method
+
+[source, scala]
+----
+checkIndexAndDataFile(
+  index: File,
+  data: File,
+  blocks: Int): Array[Long]
+----
+
+`checkIndexAndDataFile` first checks if the size of the input `index` file is exactly the input `blocks` multiplied by `8`.
+
+`checkIndexAndDataFile` returns `null` when the numbers, and hence the shuffle index and data files, don't match.
+
+`checkIndexAndDataFile` reads the shuffle `index` file and converts the offsets into lengths of each block.
+
+`checkIndexAndDataFile` makes sure that the size of the input shuffle `data` file is exactly the sum of the block lengths.
+
+`checkIndexAndDataFile` returns the block lengths if the numbers match, and `null` otherwise.
+
+NOTE: `checkIndexAndDataFile` is used exclusively when `IndexShuffleBlockResolver` is requested to <<writeIndexFileAndCommit, write the shuffle index and data files>> (for shuffle and map IDs).
+
+=== [[getIndexFile]] Requesting Shuffle Block Index File (from DiskBlockManager) -- `getIndexFile` Internal Method
+
+[source, scala]
+----
+getIndexFile(shuffleId: Int, mapId: Int): File
+----
+
+`getIndexFile` link:spark-BlockManager.adoc#diskBlockManager[requests `BlockManager` for the current `DiskBlockManager`].
+
+NOTE: `getIndexFile` uses link:spark-SparkEnv.adoc#blockManager[`SparkEnv` to access the current `BlockManager`] unless specified when <<creating-instance, `IndexShuffleBlockResolver` is created>>.
+
+`getIndexFile` then link:spark-DiskBlockManager.adoc#getFile[requests `DiskBlockManager` for the shuffle index file] given the input `shuffleId` and `mapId` (as `ShuffleIndexBlockId`)
+
+NOTE: `getIndexFile` is used when `IndexShuffleBlockResolver` <<writeIndexFileAndCommit, writes shuffle index and data files>>, <<getBlockData, creates a `ManagedBuffer` to read a shuffle block data file>>, and ultimately <<removeDataByMap, removes the shuffle index and data files>>.
+
+=== [[getDataFile]] Requesting Shuffle Block Data File -- `getDataFile` Method
+
+[source, scala]
+----
+getDataFile(
+  shuffleId: Int,
+  mapId: Int): File
+----
+
+`getDataFile` requests the <<blockManager, BlockManager>> for the <<spark-BlockManager.adoc#diskBlockManager, DiskBlockManager>> that is in turn requested for the <<spark-DiskBlockManager.adoc#getFile, shuffle block data file>> (for a <<spark-BlockDataManager.adoc#ShuffleDataBlockId, ShuffleDataBlockId>>)
+
+[NOTE]
+====
+`getDataFile` is used when:
+
+* `IndexShuffleBlockResolver` is requested to <<getBlockData, get a ManagedBuffer for block data>>, <<removeDataByMap, removeDataByMap>>, and <<writeIndexFileAndCommit, write shuffle index and data files>>
+
+* <<spark-shuffle-BypassMergeSortShuffleWriter.adoc#write, BypassMergeSortShuffleWriter>>, <<spark-shuffle-UnsafeShuffleWriter.adoc#closeAndWriteOutput, UnsafeShuffleWriter>>, and <<spark-shuffle-SortShuffleWriter.adoc#write, SortShuffleWriter>> are requested to write records to a shuffle system
+====
+
+=== [[removeDataByMap]] Removing Shuffle Index and Data Files (For Shuffle and Map IDs) -- `removeDataByMap` Method
+
+[source, scala]
+----
+removeDataByMap(shuffleId: Int, mapId: Int): Unit
+----
+
+`removeDataByMap` <<getDataFile, finds>> and deletes the shuffle data for the input `shuffleId` and `mapId` first followed by <<getIndexFile, finding>> and deleting the shuffle data index file.
+
+When `removeDataByMap` fails deleting the files, `removeDataByMap` prints out the following WARN message to the logs.
+
+```
+Error deleting data [path]
+```
+
+or
+
+```
+Error deleting index [path]
+```
+
+NOTE: `removeDataByMap` is used exclusively when `SortShuffleManager` is requested to <<spark-shuffle-SortShuffleManager.adoc#unregisterShuffle, unregister a shuffle>> (remove a shuffle from a shuffle system).
+
+=== [[stop]] Stopping IndexShuffleBlockResolver -- `stop` Method
+
+[source, scala]
+----
+stop(): Unit
+----
+
+NOTE: `stop` is part of link:spark-shuffle-ShuffleBlockResolver.adoc#stop[ShuffleBlockResolver contract].
+
+`stop` is a noop operation, i.e. does nothing when called.
+
+=== [[internal-properties]] Internal Properties
+
+.IndexShuffleBlockResolver's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="1m,3",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| transportConf
+a| [[transportConf]] <<spark-TransportConf.adoc#, TransportConf>> for *shuffle* module
+
+Created immediately when `IndexShuffleBlockResolver` is <<creating-instance, created>> by requesting `SparkTransportConf` object to <<spark-TransportConf.adoc#SparkTransportConf-fromSparkConf, create one from SparkConf>>
+
+|===

@@ -1,0 +1,119 @@
+== [[Materialized]] Materialized -- Metadata for State Store Materialized View
+
+[[creating-instance]]
+`Materialized` provides optional parameters that describe how to materialize a <<kafka-streams-StateStore.adoc#, state store>> (as a <<kafka-streams-KTable.adoc#, KTable>>):
+
+* [[storeName]] Name of the <<kafka-streams-StateStore.adoc#, state store>>
+* [[storeSupplier]] <<kafka-streams-StoreSupplier.adoc#, StoreSupplier>>
+
+`Materialized` is used for the following:
+
+* In <<kafka-streams-StreamsBuilder.adoc#, High-Level Stream Processing DSL>> to create <<kafka-streams-StreamsBuilder.adoc#table, KTables>> and <<kafka-streams-StreamsBuilder.adoc#globalTable, global KTables>>
+
+* <<kafka-streams-KTable.adoc#, KTable>> API
+
+* For `count`, `reduce` and `aggregate` operators in <<kafka-streams-KGroupedStream.adoc#, KGroupedStream>>, <<kafka-streams-KGroupedTable.adoc#, KGroupedTable>>, <<kafka-streams-SessionWindowedKStream.adoc#, SessionWindowedKStream>>, <<kafka-streams-TimeWindowedKStream.adoc#, TimeWindowedKStream>>
+
+`Materialized` is <<creating-instance, created>> using the <<factory-methods, factory methods>>.
+
+[[factory-methods]]
+[source, java]
+----
+Materialized<K, V, S> as(
+  String storeName)
+Materialized<K, V, KeyValueStore<Bytes, byte[]>> as(
+  KeyValueBytesStoreSupplier supplier)
+Materialized<K, V, SessionStore<Bytes, byte[]>> as(
+  SessionBytesStoreSupplier supplier)
+Materialized<K, V, WindowStore<Bytes, byte[]>> as(
+  WindowBytesStoreSupplier supplier)
+Materialized<K, V, S> with(
+  Serde<K> keySerde,
+  Serde<V> valueSerde)
+----
+
+A `Materialized` instance can futher be configured using the <<methods, "with" methods>>.
+
+[[methods]]
+.Materialized's with Methods
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| withCachingDisabled
+a| [[withCachingDisabled]]
+
+[source, java]
+----
+Materialized<K, V, S> withCachingDisabled()
+----
+
+Creates a `Materialized` with <<cachingEnabled, caching disabled>>
+
+| withCachingEnabled
+a| [[withCachingEnabled]]
+
+[source, java]
+----
+Materialized<K, V, S> withCachingEnabled()
+----
+
+Creates a `Materialized` with <<cachingEnabled, caching enabled>>
+
+| withKeySerde
+a| [[withKeySerde]]
+
+[source, java]
+----
+Materialized<K, V, S> withKeySerde(Serde<K> keySerde)
+----
+
+Creates a `Materialized` with the <<keySerde, Serde for keys>>
+
+| withLoggingDisabled
+a| [[withLoggingDisabled]]
+
+[source, java]
+----
+Materialized<K, V, S> withLoggingDisabled()
+----
+
+Creates a `Materialized` with <<loggingEnabled, logging disabled>>
+
+| withLoggingEnabled
+a| [[withLoggingEnabled]]
+
+[source, java]
+----
+Materialized<K, V, S> withLoggingEnabled(Map<String, String> config)
+----
+
+Creates a `Materialized` with <<loggingEnabled, logging enabled>>
+
+| withRetention
+a| [[withRetention]]
+
+[source, java]
+----
+Materialized<K, V, S> withRetention(Duration retention)
+----
+
+| withValueSerde
+a| [[withValueSerde]]
+
+[source, java]
+----
+Materialized<K, V, S> withValueSerde(Serde<V> valueSerde)
+----
+
+Creates a `Materialized` with the <<valueSerde, Serde for values>>
+|===
+
+=== Scala API for Kafka Streams
+
+<<kafka-streams-scala.adoc#, Scala API for Kafka Streams>> makes the optional `Materialized` metadata an implicit parameter in the `KStream` API.
+
+Moreover, <<kafka-streams-scala-ImplicitConversions.adoc#, ImplicitConversions>> object defines <<kafka-streams-scala-ImplicitConversions.adoc#materializedFromSerde, materializedFromSerde>> implicit method that creates a `Materialized` instance with the key and value `Serde` objects available in implicit scope.
+
+Scala API for Kafka Streams also defines <<kafka-streams-scala-Materialized.adoc#, Materialized>> object with `++`with`++` and `++as++` factory methods that use implicit key and value `Serde` objects.

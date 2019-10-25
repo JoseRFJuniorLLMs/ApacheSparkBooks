@@ -1,0 +1,92 @@
+== [[YarnSparkHadoopUtil]] YarnSparkHadoopUtil
+
+`YarnSparkHadoopUtil` is...FIXME
+
+`YarnSparkHadoopUtil` can only be created when link:spark-yarn-client.adoc#SPARK_YARN_MODE[SPARK_YARN_MODE flag is enabled].
+
+NOTE: `YarnSparkHadoopUtil` belongs to `org.apache.spark.deploy.yarn` package.
+
+[TIP]
+====
+Enable `DEBUG` logging level for `org.apache.spark.deploy.yarn.YarnSparkHadoopUtil` logger to see what happens inside.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.deploy.yarn.YarnSparkHadoopUtil=DEBUG
+```
+
+Refer to link:../spark-logging.adoc[Logging].
+====
+
+=== [[startCredentialUpdater]] `startCredentialUpdater` Method
+
+CAUTION: FIXME
+
+=== [[get]] Getting YarnSparkHadoopUtil Instance -- `get` Method
+
+CAUTION: FIXME
+
+=== [[addPathToEnvironment]] `addPathToEnvironment` Method
+
+[source, scala]
+----
+addPathToEnvironment(env: HashMap[String, String], key: String, value: String): Unit
+----
+
+CAUTION: FIXME
+
+=== [[startExecutorDelegationTokenRenewer]] `startExecutorDelegationTokenRenewer`
+
+CAUTION: FIXME
+
+=== [[stopExecutorDelegationTokenRenewer]] `stopExecutorDelegationTokenRenewer`
+
+CAUTION: FIXME
+
+=== [[getApplicationAclsForYarn]] `getApplicationAclsForYarn` Method
+
+CAUTION: FIXME
+
+=== [[MEMORY_OVERHEAD_FACTOR]] MEMORY_OVERHEAD_FACTOR
+
+`MEMORY_OVERHEAD_FACTOR` is a constant that equals to `10%` for memory overhead.
+
+=== [[MEMORY_OVERHEAD_MIN]] MEMORY_OVERHEAD_MIN
+
+`MEMORY_OVERHEAD_MIN` is a constant that equals to `384L` for memory overhead.
+
+=== [[expandEnvironment]] Resolving Environment Variable -- `expandEnvironment` Method
+
+[source, scala]
+----
+expandEnvironment(environment: Environment): String
+----
+
+`expandEnvironment` resolves `environment` variable using YARN's `Environment.$` or `Environment.$$` methods (depending on the version of Hadoop used).
+
+=== [[getContainerId]] Computing YARN's ContainerId -- `getContainerId` Method
+
+[source, scala]
+----
+getContainerId: ContainerId
+----
+
+`getContainerId` is a `private[spark]` method that gets YARN's `ContainerId` from the YARN environment variable `ApplicationConstants.Environment.CONTAINER_ID` and converts it to the return object using YARN's `ConverterUtils.toContainerId`.
+
+=== [[getInitialTargetExecutorNumber]] Calculating Initial Number of Executors -- `getInitialTargetExecutorNumber` Method
+
+[source, scala]
+----
+getInitialTargetExecutorNumber(conf: SparkConf, numExecutors: Int = 2): Int
+----
+
+`getInitialTargetExecutorNumber` calculates the initial number of executors for Spark on YARN. It varies by whether link:../spark-dynamic-allocation.adoc#isDynamicAllocationEnabled[dynamic allocation is enabled or not].
+
+NOTE: The default number of executors (aka `DEFAULT_NUMBER_EXECUTORS`) is `2`.
+
+With link:../spark-dynamic-allocation.adoc#isDynamicAllocationEnabled[dynamic allocation enabled], `getInitialTargetExecutorNumber` is link:../spark-dynamic-allocation.adoc#spark.dynamicAllocation.initialExecutors[spark.dynamicAllocation.initialExecutors] or link:../spark-dynamic-allocation.adoc#spark.dynamicAllocation.minExecutors[spark.dynamicAllocation.minExecutors] to fall back to `0` if the others are undefined.
+
+With link:../spark-dynamic-allocation.adoc#isDynamicAllocationEnabled[dynamic allocation disabled], `getInitialTargetExecutorNumber` is the value of link:../spark-Executor.adoc#spark.executor.instances[spark.executor.instances] property or `SPARK_EXECUTOR_INSTANCES` environment variable, or the default value (of the input parameter `numExecutors`) `2`.
+
+NOTE: `getInitialTargetExecutorNumber` is used to calculate link:spark-yarn-yarnschedulerbackend.adoc#totalExpectedExecutors[totalExpectedExecutors] to start Spark on YARN in link:spark-yarn-client-yarnclientschedulerbackend.adoc#totalExpectedExecutors[client] or link:spark-yarn-cluster-yarnclusterschedulerbackend.adoc#totalExpectedExecutors[cluster] modes.

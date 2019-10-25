@@ -1,0 +1,131 @@
+== [[StateManager]] StateManager Contract -- State Store Managers
+
+`StateManager` is the <<contract, contract>> of <<implementations, state store managers>> that manage <<kafka-streams-StateStore.adoc#, state stores>> and are <<kafka-streams-internals-Checkpointable.adoc#, checkpointable>>.
+
+[[contract]]
+.StateManager Contract
+[cols="1m,3",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| baseDir
+a| [[baseDir]]
+
+[source, java]
+----
+File baseDir()
+----
+
+*Base directory*
+
+Used exclusively when `AbstractProcessorContext` is requested for the <<kafka-streams-internals-AbstractProcessorContext.adoc#stateDir, state directory>>
+
+| close
+a| [[close]]
+
+[source, java]
+----
+void close(
+  Map<TopicPartition, Long> offsets)
+----
+
+Closes a state manager
+
+Used when:
+
+* `AbstractTask` is requested to <<kafka-streams-internals-AbstractTask.adoc#closeStateManager, close the state manager>>
+
+* `GlobalStateUpdateTask` is requested to <<kafka-streams-internals-GlobalStateUpdateTask.adoc#close, close the state manager>>
+
+| flush
+a| [[flush]]
+
+[source, java]
+----
+void flush()
+----
+
+Flushes all <<kafka-streams-StateStore.adoc#, state stores>> registered (in the state manager)
+
+Used when:
+
+* <<kafka-streams-internals-AbstractTask.adoc#flushState, AbstractTask>> and <<kafka-streams-internals-GlobalStateUpdateTask.adoc#flushState, GlobalStateUpdateTask>> are requested to flush state stores
+
+* `StandbyTask` is requested to <<kafka-streams-internals-StandbyTask.adoc#flushAndCheckpointState, flush and checkpoint state stores>>
+
+| getGlobalStore
+a| [[getGlobalStore]]
+
+[source, java]
+----
+StateStore getGlobalStore(
+  String name)
+----
+
+Accessing the global <<kafka-streams-StateStore.adoc#, state store>> by name
+
+Used when:
+
+* <<kafka-streams-internals-GlobalProcessorContextImpl.adoc#getStateStore, GlobalProcessorContextImpl>> and <<kafka-streams-internals-ProcessorContextImpl.adoc#getStateStore, ProcessorContextImpl>> are requested to get the global <<kafka-streams-StateStore.adoc#, state store>> by name
+
+* `GlobalStateManagerImpl` is requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#getStore, get state store by name>>
+
+| getStore
+a| [[getStore]]
+
+[source, java]
+----
+StateStore getStore(
+  String name)
+----
+
+Accessing the <<kafka-streams-StateStore.adoc#, state store>> by name
+
+Used when <<kafka-streams-internals-AbstractTask.adoc#getStore, AbstractTask>> and <<kafka-streams-internals-ProcessorContextImpl.adoc#getStateStore, ProcessorContextImpl>> are requested to get the state store by name
+
+| register
+a| [[register]]
+
+[source, java]
+----
+void register(
+  StateStore store,
+  StateRestoreCallback stateRestoreCallback)
+----
+
+Registers a <<kafka-streams-StateStore.adoc#, state store>> (with an associated <<kafka-streams-StateRestoreCallback.adoc#, StateRestoreCallback>>)
+
+Used exclusively when `AbstractProcessorContext` is requested to <<kafka-streams-internals-AbstractProcessorContext.adoc#register, register a state store>>
+
+| reinitializeStateStoresForPartitions
+a| [[reinitializeStateStoresForPartitions]]
+
+[source, java]
+----
+void reinitializeStateStoresForPartitions(
+  Collection<TopicPartition> partitions,
+  InternalProcessorContext processorContext)
+----
+
+Used when:
+
+* `AbstractTask` is requested to <<kafka-streams-internals-AbstractTask.adoc#reinitializeStateStoresForPartitions, reinitializeStateStoresForPartitions>>
+
+* `GlobalStateManagerImpl` is requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#restoreState, restoreState>>
+
+|===
+
+[[implementations]]
+.StateManagers (Direct Extensions)
+[cols="1,2",options="header",width="100%"]
+|===
+| StateManager
+| Description
+
+| <<kafka-streams-internals-AbstractStateManager.adoc#, AbstractStateManager>>
+| [[AbstractStateManager]]
+
+| <<kafka-streams-internals-GlobalStateManager.adoc#, GlobalStateManager>>
+| [[GlobalStateManager]]
+|===

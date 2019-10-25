@@ -1,0 +1,168 @@
+== [[StreamsMetadataState]] StreamsMetadataState
+
+`StreamsMetadataState` manages the <<clusterMetadata, Kafka cluster metadata>> for a <<kafka-streams-KafkaStreams.adoc#streamsMetadataState, KafkaStreams>> instance.
+
+.StreamsMetadataState and Cluster Metadata Changes (from StreamsPartitionAssignor)
+image::images/kafka-streams-StreamsMetadataState-onChange.png[align="center"]
+
+`StreamsMetadataState` comes with <<getAllMetadata, getAllMetadata>> method that returns <<allMetadata, StreamsMetadatas>> for all streams client instances in a <<kafka-streams-multi-instance-kafka-streams-application.adoc#, multi-instance Kafka Streams application>>.
+
+`StreamsMetadataState` is <<creating-instance, created>> exclusively for the <<kafka-streams-internals-StreamThread.adoc#taskManager, TaskManager>> of the <<kafka-streams-KafkaStreams.adoc#threads, stream processor threads>> of a <<kafka-streams-KafkaStreams.adoc#streamsMetadataState, KafkaStreams>> instance.
+
+[[StreamsMetadata]]
+`StreamsMetadata` represents the metadata of a <<kafka-streams-KafkaStreams.adoc#, KafkaStreams>> stream processing node (process) in a Kafka Streams application:
+
+* [[hostInfo]] A user-defined endpoint (as a pair of a host and a port)
+* [[stateStoreNames]] Names of state stores
+* [[topicPartitions]] Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/common/TopicPartition.html[TopicPartitions] (that this instance is assigned to)
+
+[[internal-registries]]
+.StreamsMetadataState's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="1m,2",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| allMetadata
+a| [[allMetadata]] <<StreamsMetadata, StreamsMetadatas>> for all instances in a <<kafka-streams-multi-instance-kafka-streams-application.adoc#, multi-instance Kafka Streams application>>
+
+<<StreamsMetadata, StreamsMetadata>> are added exclusively when `StreamsMetadataState` is requested to <<rebuildMetadata, rebuildMetadata>> (after all entries are first removed)
+
+`allMetadata` is accessed when `StreamsMetadataState` is requested for a <<toString, textual representation>>, <<getAllMetadataForStore, getAllMetadataForStore>>, <<getMetadataWithKey, getMetadataWithKey>>, <<getStreamsMetadataForKey, getStreamsMetadataForKey>>
+
+| clusterMetadata
+a| [[clusterMetadata]] Cluster metadata, i.e. a subset of the nodes, topics, and partitions in the Kafka cluster (as a Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/common/Cluster.html[Cluster]) that is given when `StreamsMetadataState` is requested to <<onChange, handle cluster metadata changes>>
+
+Used when:
+
+* <<getMetadataWithKey, getMetadataWithKey>>
+
+* <<isInitialized, isInitialized>>
+
+* <<toString, toString>>
+
+| globalStores
+| [[globalStores]] Names of the global link:kafka-streams-StateStore.adoc[StateStores]
+
+Used when...FIXME
+
+| myMetadata
+a| [[myMetadata]] <<StreamsMetadata, StreamsMetadata>> of the <<thisHost, current node>>
+
+|===
+
+=== [[creating-instance]] Creating StreamsMetadataState Instance
+
+`StreamsMetadataState` takes the following when created:
+
+* [[builder]] link:kafka-streams-internals-InternalTopologyBuilder.adoc[InternalTopologyBuilder]
+* [[thisHost]] `HostInfo` (with the `host` and `port`)
+
+`StreamsMetadataState` initializes the <<internal-registries, internal registries and counters>>.
+
+=== [[getAllMetadataForStore]] `getAllMetadataForStore` Method
+
+[source, java]
+----
+Collection<StreamsMetadata> getAllMetadataForStore(final String storeName)
+----
+
+`getAllMetadataForStore`...FIXME
+
+NOTE: `getAllMetadataForStore` is used exclusively when `KafkaStreams` is requested to link:kafka-streams-KafkaStreams.adoc#allMetadataForStore[allMetadataForStore].
+
+=== [[onChange]] Handling Cluster Metadata Changes -- `onChange` Method
+
+[source, scala]
+----
+void onChange(
+  final Map<HostInfo, Set<TopicPartition>> currentState,
+  final Cluster clusterMetadata)
+----
+
+`onChange` simply records the given `Cluster` as the <<clusterMetadata, Cluster>> and <<rebuildMetadata, rebuildMetadata>> (with the given current state of Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/common/TopicPartition.html[TopicPartitions] per `HostInfo`).
+
+NOTE: `onChange` is used exclusively when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#setPartitionsByHostState, notify the StreamsMetadataState about cluster metadata changes>>.
+
+=== [[rebuildMetadata]] Rebuilding Internal StreamsMetadata -- `rebuildMetadata` Internal Method
+
+[source, scala]
+----
+void rebuildMetadata(final Map<HostInfo, Set<TopicPartition>> currentState)
+----
+
+`rebuildMetadata` firstly clears the <<allMetadata, allMetadata>> internal registry.
+
+`rebuildMetadata` does nothing else and returns if the given `currentState` is empty.
+
+`rebuildMetadata` requests the <<builder, InternalTopologyBuilder>> for <<stateStoreNameToSourceTopics, stateStoreNameToSourceTopics>>.
+
+For every entry in the input `currentState`, `rebuildMetadata`...FIXME
+
+NOTE: `rebuildMetadata` is used exclusively when `StreamsMetadataState` is requested to <<onChange, handle cluster metadata changes>>.
+
+=== [[toString]] Describing Itself (Textual Representation) -- `toString` Method
+
+[source, java]
+----
+String toString() // <1>
+String toString(final String indent)
+----
+<1> Uses an empty indent
+
+`toString`...FIXME
+
+NOTE: `toString` is used when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#toString, describe itself>>.
+
+=== [[isInitialized]] `isInitialized` Internal Method
+
+[source, java]
+----
+boolean isInitialized()
+----
+
+`isInitialized`...FIXME
+
+NOTE: `isInitialized` is used when...FIXME
+
+=== [[getMetadataWithKey]] `getMetadataWithKey` Method
+
+[source, java]
+----
+StreamsMetadata getMetadataWithKey(
+  final String storeName,
+  final K key,
+  final Serializer<K> keySerializer)
+StreamsMetadata getMetadataWithKey(
+  final String storeName,
+  final K key,
+  final StreamPartitioner<? super K, ?> partitioner)
+----
+
+`getMetadataWithKey`...FIXME
+
+NOTE: `getMetadataWithKey` is used exclusively when `KafkaStreams` is requested for <<kafka-streams-KafkaStreams.adoc#metadataForKey, metadataForKey>>.
+
+=== [[hasPartitionsForAnyTopics]] `hasPartitionsForAnyTopics` Internal Method
+
+[source, java]
+----
+boolean hasPartitionsForAnyTopics(
+  final List<String> topicNames,
+  final Set<TopicPartition> partitionForHost)
+----
+
+`hasPartitionsForAnyTopics` is enabled (returns `true`) when the input `topicNames` contain any of the topics in the input `partitionForHost`. Otherwise, `hasPartitionsForAnyTopics` is disabled (`false`).
+
+NOTE: `hasPartitionsForAnyTopics` is used exclusively when `StreamsMetadataState` is requested to <<rebuildMetadata, rebuildMetadata>>.
+
+=== [[getAllMetadata]] `getAllMetadata` Method
+
+[source, java]
+----
+Collection<StreamsMetadata> getAllMetadata()
+----
+
+`getAllMetadata` simply returns the <<allMetadata, allMetadata>> internal registry.
+
+NOTE: `getAllMetadata` is used exclusively when `KafkaStreams` is requested for <<kafka-streams-KafkaStreams.adoc#allMetadata, StreamsMetadatas for all KafkaStreams instances>> (in a <<kafka-streams-multi-instance-kafka-streams-application.adoc#, multi-instance Kafka Streams application>>).

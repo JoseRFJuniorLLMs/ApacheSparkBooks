@@ -1,0 +1,34 @@
+== [[TopicNameExtractor]] TopicNameExtractor -- Dynamic Routing of Output Records
+
+`TopicNameExtractor` is the <<contract, abstraction>> of <<implementations, topic name extractors>> that Kafka Streams developers use for *dynamic routing of records* by <<extract, extracting the name of the topic to publish a record to>>.
+
+NOTE: `TopicNameExtractor` can be specified using the high-level <<kafka-streams-KStream.adoc#to, KStream.to>> or the low-level <<kafka-streams-Topology.adoc#addSink, Topology.addSink>> operators.
+
+[[contract]]
+.TopicNameExtractor Contract
+[cols="1m,3",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| extract
+a| [[extract]]
+
+[source, java]
+----
+String extract(
+  final K key,
+  final V value,
+  final RecordContext recordContext)
+----
+
+Extracts the name of the topic to publish a record to
+
+Used exclusively when `SinkNode` is requested to <<kafka-streams-internals-SinkNode.adoc#process, process a record>>
+
+|===
+
+[[implementations]]
+NOTE: <<kafka-streams-internals-StaticTopicNameExtractor.adoc#, StaticTopicNameExtractor>> is an internal implementation of the <<contract, TopicNameExtractor Contract>> in Kafka Streams.
+
+TIP: Read up on the feature in https://cwiki.apache.org/confluence/display/KAFKA/KIP-303%3A+Add+Dynamic+Routing+in+Streams+Sink[KIP-303: Add Dynamic Routing in Streams Sink].

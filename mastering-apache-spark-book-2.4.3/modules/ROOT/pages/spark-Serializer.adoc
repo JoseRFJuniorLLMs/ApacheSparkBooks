@@ -1,0 +1,19 @@
+== [[Serializer]] Serializer -- Task Serialization and Deserialization
+
+=== [[newInstance]] `newInstance` Method
+
+CAUTION: FIXME
+
+=== [[deserialize]] `deserialize` Method
+
+CAUTION: FIXME
+
+=== [[supportsRelocationOfSerializedObjects]] `supportsRelocationOfSerializedObjects` Property
+
+`supportsRelocationOfSerializedObjects` should be enabled (i.e. true) only when reordering the bytes of serialized objects in serialization stream output is equivalent to having re-ordered those elements prior to serializing them.
+
+`supportsRelocationOfSerializedObjects` is disabled (i.e. `false`) by default.
+
+NOTE: `KryoSerializer` uses `autoReset` for `supportsRelocationOfSerializedObjects`.
+
+NOTE: `supportsRelocationOfSerializedObjects` is enabled in `UnsafeRowSerializer`.

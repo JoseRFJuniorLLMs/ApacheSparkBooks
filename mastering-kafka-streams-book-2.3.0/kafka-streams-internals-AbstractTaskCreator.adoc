@@ -1,0 +1,69 @@
+== [[AbstractTaskCreator]] AbstractTaskCreator
+
+`AbstractTaskCreator` is the <<contract, base>> of <<implementations, task creators>> (_factories_) that can <<createTask, create stream processor tasks>>.
+
+[[contract]]
+.AbstractTaskCreator Contract
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| createTask
+a| [[createTask]]
+
+[source, java]
+----
+T createTask(
+  Consumer<byte[], byte[]> consumer,
+  TaskId id,
+  Set<TopicPartition> partitions)
+----
+
+Creates a <<kafka-streams-internals-Task.adoc#, task>>
+
+Used exclusively when `AbstractTaskCreator` is requested to <<createTasks, create tasks>> (when `TaskManager` is requested for link:kafka-streams-internals-TaskManager.adoc#addStandbyTasks[standby] or link:kafka-streams-internals-TaskManager.adoc#addStreamTasks[stream] tasks)
+
+|===
+
+NOTE: `AbstractTaskCreator` is a Java abstract class and cannot be <<creating-instance, created>> directly. It is created indirectly when the <<implementations, concrete AbstractTaskCreators>> are.
+
+[[implementations]]
+.AbstractTaskCreators
+[cols="1,2",options="header",width="100%"]
+|===
+| AbstractTaskCreator
+| Description
+
+| link:kafka-streams-internals-StandbyTaskCreator.adoc[StandbyTaskCreator]
+| Creates link:kafka-streams-internals-StandbyTask.adoc[standby tasks]
+
+| link:kafka-streams-internals-TaskCreator.adoc[TaskCreator]
+| Creates link:kafka-streams-internals-StreamTask.adoc[stream tasks]
+|===
+
+=== [[createTasks]] Creating Tasks -- `createTasks` Method
+
+[source, java]
+----
+Collection<T> createTasks(
+  Consumer<byte[], byte[]> consumer,
+  Map<TaskId, Set<TopicPartition>> tasksToBeCreated)
+----
+
+`createTasks`...FIXME
+
+NOTE: `createTasks` is used when `TaskManager` is requested for <<kafka-streams-internals-TaskManager.adoc#addStandbyTasks, standby>> and <<kafka-streams-internals-TaskManager.adoc#addStreamTasks, stream>> tasks.
+
+=== [[creating-instance]] Creating AbstractTaskCreator Instance
+
+`AbstractTaskCreator` takes the following when created:
+
+* [[builder]] <<kafka-streams-internals-InternalTopologyBuilder.adoc#, InternalTopologyBuilder>>
+* [[config]] <<kafka-streams-StreamsConfig.adoc#, StreamsConfig>>
+* [[streamsMetrics]] <<kafka-streams-StreamsMetrics.adoc#, StreamsMetrics>>
+* [[stateDirectory]] <<kafka-streams-internals-StateDirectory.adoc#, StateDirectory>>
+* [[taskCreatedSensor]] Kafka `Sensor` (to monitor task created)
+* [[storeChangelogReader]] <<kafka-streams-internals-ChangelogReader.adoc#, ChangelogReader>>
+* [[time]] `Time`
+* [[log]] `Logger`

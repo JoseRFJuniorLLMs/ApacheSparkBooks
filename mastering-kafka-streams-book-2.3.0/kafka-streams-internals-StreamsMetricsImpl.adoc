@@ -1,0 +1,44 @@
+== [[StreamsMetricsImpl]] StreamsMetricsImpl
+
+`StreamsMetricsImpl` is a concrete <<kafka-streams-StreamsMetrics.adoc#, StreamsMetrics>> that...FIXME
+
+`StreamsMetricsImpl` is <<creating-instance, created>> when:
+
+* `GlobalStreamThread` is <<kafka-streams-internals-GlobalStreamThread.adoc#, created>>
+
+* `StreamsMetricsThreadImpl` is <<kafka-streams-internals-StreamsMetricsThreadImpl.adoc#, created>>
+
+When requested for the <<kafka-streams-StreamsMetrics.adoc#metrics, metrics>>, `StreamsMetricsImpl` simply requests the Kafka <<metrics, Metrics>> for them.
+
+NOTE: link:kafka-streams-internals-StreamsMetricsThreadImpl.adoc[StreamsMetricsThreadImpl] is a custom `StreamsMetricsImpl` that is used...FIXME...for efficiency.
+
+=== [[measureLatencyNs]] `measureLatencyNs` Method
+
+[source, java]
+----
+void measureLatencyNs(final Time time, final Runnable action, final Sensor sensor)
+----
+
+`measureLatencyNs`...FIXME
+
+NOTE: `measureLatencyNs` is used when...FIXME
+
+=== [[recordLatency]] Recording Latency with Sensor -- `recordLatency` Method
+
+[source, java]
+----
+void recordLatency(Sensor sensor, long startNs, long endNs)
+----
+
+NOTE: `recordLatency` is part of link:kafka-streams-StreamsMetrics.adoc#recordLatency[StreamsMetrics Contract] to record a latency with a Kafka `Sensor`.
+
+`recordLatency` simply requests the input Kafka `Sensor` to record the latency (i.e. the difference between the input `endNs` and `startNs` timestamps).
+
+=== [[creating-instance]] Creating StreamsMetricsImpl Instance
+
+`StreamsMetricsImpl` takes the following when created:
+
+* [[metrics]] Kafka `Metrics`
+* [[threadName]] Thread name
+
+`StreamsMetricsImpl` initializes the <<internal-registries, internal registries and counters>>.

@@ -1,0 +1,130 @@
+== [[ProcessorTopology]] ProcessorTopology -- Physical Processor Task Topology
+
+`ProcessorTopology` is a *physical processor task topology* (of <<kafka-streams-Topology.adoc#, logical processor node topology>>).
+
+A `ProcessorTopology` is associated with every <<kafka-streams-internals-Task.adoc#topology, task>>.
+
+A `ProcessorTopology` is used to create <<kafka-streams-internals-AbstractTask.adoc#topology, AbstractTask>>, <<kafka-streams-internals-GlobalStateManagerImpl.adoc#topology, GlobalStateManagerImpl>>, <<kafka-streams-internals-GlobalStateUpdateTask.adoc#topology, GlobalStateUpdateTask>>, <<kafka-streams-internals-GlobalStreamThread.adoc#topology, GlobalStreamThread>>, <<kafka-streams-internals-StandbyTask.adoc#topology, StandbyTask>>, and <<kafka-streams-internals-StreamTask.adoc#topology, StreamTask>>.
+
+`ProcessorTopology` is <<creating-instance, created>> when `InternalTopologyBuilder` is requested to build <<kafka-streams-internals-InternalTopologyBuilder.adoc#build, processor task>> and <<kafka-streams-internals-InternalTopologyBuilder.adoc#buildGlobalStateTopology, global state>> topologies.
+
+NOTE: Once <<creating-instance, created>>, all internal registries in `ProcessorTopology` will never change.
+
+`ProcessorTopology` can also be created using the <<methods, "with" methods>>.
+
+[[methods]]
+.ProcessorTopology's with Methods
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| with
+a| [[with]]
+
+[source, java]
+----
+ProcessorTopology with(
+  List<ProcessorNode> processorNodes,
+  Map<String, SourceNode> sourcesByTopic,
+  List<StateStore> stateStoresByName,
+  Map<String, String> storeToChangelogTopic)
+----
+
+| withGlobalStores
+a| [[withGlobalStores]]
+
+[source, java]
+----
+ProcessorTopology withGlobalStores(
+  List<StateStore> stateStores,
+  Map<String, String> storeToChangelogTopic)
+----
+
+| withLocalStores
+a| [[withLocalStores]]
+
+[source, java]
+----
+ProcessorTopology withLocalStores(
+  List<StateStore> stateStores,
+  Map<String, String> storeToChangelogTopic)
+----
+
+| withRepartitionTopics
+a| [[withRepartitionTopics]]
+
+[source, java]
+----
+ProcessorTopology withRepartitionTopics(
+  List<ProcessorNode> processorNodes,
+  Map<String, SourceNode> sourcesByTopic,
+  Set<String> repartitionTopics)
+----
+
+| withSources
+a| [[withSources]]
+
+[source, java]
+----
+ProcessorTopology withSources(
+  List<ProcessorNode> processorNodes,
+  Map<String, SourceNode> sourcesByTopic)
+----
+
+|===
+
+[source, scala]
+----
+// Using Scala with the Java-centric API of Kafka Streams
+import collection.JavaConverters._
+
+import org.apache.kafka.streams.processor.internals.ProcessorNode
+val processorNodes = Seq.empty[ProcessorNode[_, _]].asJava
+import org.apache.kafka.streams.processor.internals.SourceNode
+val sourcesByTopic = Map.empty[String, SourceNode[_, _]].asJava
+import org.apache.kafka.streams.processor.StateStore
+val stateStoresByName = Seq.empty[StateStore].asJava
+val storeToChangelogTopic = Map.empty[String, String].asJava
+
+import org.apache.kafka.streams.processor.internals.ProcessorTopology
+val topology = ProcessorTopology.`with`(processorNodes, sourcesByTopic, stateStoresByName, storeToChangelogTopic)
+
+// The topology is empty (no children) so nothing is printed out except the header "ProcessorTopology:"
+scala> println(topology)
+ProcessorTopology:
+----
+
+=== [[creating-instance]] Creating ProcessorTopology Instance
+
+`ProcessorTopology` takes the following when created:
+
+* [[processorNodes]][[processors]] <<kafka-streams-internals-ProcessorNode.adoc#, ProcessorNodes>>
+* [[sourcesByTopic]] <<kafka-streams-internals-SourceNode.adoc#, SourceNodes>> by name
+* [[sinksByTopic]] <<kafka-streams-internals-SinkNode.adoc#, SinkNodes>> by name
+* [[stateStores]] Local <<kafka-streams-StateStore.adoc#, state stores>>
+* [[globalStateStores]] Global <<kafka-streams-StateStore.adoc#, state stores>>
+* [[stateStoreToChangelogTopic]][[storeToChangelogTopic]] Names of the <<kafka-streams-StateStore.adoc#, state stores>> and the names of the corresponding changelog topics (from the <<kafka-streams-internals-InternalTopologyBuilder.adoc#storeToChangelogTopic, InternalTopologyBuilder>>)
+* [[repartitionTopics]][[isRepartitionTopic]] Names of repartition topics
+
+=== [[hasPersistentLocalStore]] `hasPersistentLocalStore` Method
+
+[source, java]
+----
+boolean hasPersistentLocalStore()
+----
+
+`hasPersistentLocalStore` is positive (`true`) when one of the <<kafka-streams-StateStore.adoc#, local StateStores>> (in the <<stateStores, stateStores>> internal registry) is <<kafka-streams-StateStore.adoc#persistent, persistent>>.
+
+NOTE: `hasPersistentLocalStore` is used exclusively when `KafkaStreams` is <<kafka-streams-KafkaStreams.adoc#creating-instance, created>> (to create a <<kafka-streams-internals-StateDirectory.adoc#, StateDirectory>>).
+
+=== [[hasPersistentGlobalStore]] `hasPersistentGlobalStore` Method
+
+[source, java]
+----
+boolean hasPersistentGlobalStore()
+----
+
+`hasPersistentGlobalStore` is positive (`true`) when one of the <<kafka-streams-StateStore.adoc#, global StateStores>> (in the <<globalStateStores, globalStateStores>> internal registry) is <<kafka-streams-StateStore.adoc#persistent, persistent>>.
+
+NOTE: `hasPersistentGlobalStore` is used exclusively when `KafkaStreams` is <<kafka-streams-KafkaStreams.adoc#creating-instance, created>> (to create a <<kafka-streams-internals-StateDirectory.adoc#, StateDirectory>>).

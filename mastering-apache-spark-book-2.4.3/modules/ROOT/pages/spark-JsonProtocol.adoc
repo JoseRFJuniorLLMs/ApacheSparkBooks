@@ -1,0 +1,19 @@
+== [[JsonProtocol]] JsonProtocol
+
+CAUTION: FIXME
+
+=== [[taskInfoFromJson]] `taskInfoFromJson` Method
+
+CAUTION: FIXME
+
+=== [[taskMetricsFromJson]] `taskMetricsFromJson` Method
+
+CAUTION: FIXME
+
+=== [[taskMetricsToJson]] `taskMetricsToJson` Method
+
+CAUTION: FIXME
+
+=== [[sparkEventFromJson]] `sparkEventFromJson` Method
+
+CAUTION: FIXME

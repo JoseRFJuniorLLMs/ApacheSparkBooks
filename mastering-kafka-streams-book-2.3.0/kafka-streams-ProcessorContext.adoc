@@ -1,0 +1,208 @@
+== [[ProcessorContext]] ProcessorContext Contract
+
+`ProcessorContext` is the <<contract, contract>> of <<implementations, processor contexts>> that allow to access to contextual information when a <<kafka-streams-Processor.adoc#, processor>> is executed.
+
+`ProcessorContext` is used when:
+
+* <<kafka-streams-Processor.adoc#init, Processor>>, <<kafka-streams-StateStore.adoc#init, StateStore>>, <<kafka-streams-Transformer.adoc#init, Transformer>>, <<kafka-streams-ValueTransformer.adoc#init, ValueTransformer>>, <<kafka-streams-ValueTransformerWithKey.adoc#init, ValueTransformerWithKey>> and <<kafka-streams-internals-KTableValueGetter.adoc#init, KTableValueGetter>> are requested to initialize
+
+* `Task` is requested for the <<kafka-streams-internals-Task.adoc#context, ProcessorContext>>
+
+* `StoreChangeLogger` is <<kafka-streams-internals-StoreChangeLogger.adoc#context, created>>
+
+TIP: Use <<kafka-streams-AbstractProcessor.adoc#, AbstractProcessor>> to manage the `ProcessorContext` of a custom <<kafka-streams-Processor.adoc#, Processor>>.
+
+[[contract]]
+.ProcessorContext Contract
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| appConfigs
+a| [[appConfigs]]
+
+[source, java]
+----
+Map<String, Object> appConfigs()
+----
+
+| appConfigsWithPrefix
+a| [[appConfigsWithPrefix]]
+
+[source, java]
+----
+Map<String, Object> appConfigsWithPrefix(String prefix)
+----
+
+| applicationId
+a| [[applicationId]]
+
+[source, java]
+----
+String applicationId()
+----
+
+| commit
+a| [[commit]]
+
+[source, java]
+----
+void commit()
+----
+
+| forward
+a| [[forward]]
+
+[source, java]
+----
+void forward(K key, V value)
+void forward(K key, V value, To to)
+----
+
+Forwards a record downstream (to child processors if there are any or <<kafka-streams-To.adoc#, To>> processor)
+
+| getStateStore
+a| [[getStateStore]]
+
+[source, java]
+----
+StateStore getStateStore(String name)
+----
+
+Retrieves the <<kafka-streams-StateStore.adoc#, state store>> by name
+
+Used when...FIXME
+
+| headers
+a| [[headers]]
+
+[source, java]
+----
+Headers headers()
+----
+
+| keySerde
+a| [[keySerde]]
+
+[source, java]
+----
+Serde<?> keySerde()
+----
+
+| metrics
+a| [[metrics]]
+
+[source, java]
+----
+StreamsMetrics metrics()
+----
+
+<<kafka-streams-StreamsMetrics.adoc#, StreamsMetrics>>
+
+| offset
+a| [[offset]]
+
+[source, java]
+----
+long offset()
+----
+
+| partition
+a| [[partition]]
+
+[source, java]
+----
+int partition()
+----
+
+| register
+a| [[register]]
+
+[source, java]
+----
+void register(
+  StateStore store,
+  StateRestoreCallback stateRestoreCallback)
+----
+
+Registers a <<kafka-streams-StateStore.adoc#, state store>> (and a <<kafka-streams-StateRestoreCallback.adoc#, StateRestoreCallback>>)
+
+Used when:
+
+* <<kafka-streams-StateStore.adoc#, State stores>> (<<kafka-streams-internals-AbstractRocksDBSegmentedBytesStore.adoc#init, AbstractRocksDBSegmentedBytesStore>>, <<kafka-streams-internals-InMemoryKeyValueStore.adoc#init, InMemoryKeyValueStore>>, <<kafka-streams-internals-InMemorySessionStore.adoc#init, InMemorySessionStore>>, <<kafka-streams-internals-InMemoryTimeOrderedKeyValueBuffer.adoc#init, InMemoryTimeOrderedKeyValueBuffer>>, <<kafka-streams-internals-InMemoryWindowStore.adoc#init, InMemoryWindowStore>>, <<kafka-streams-internals-MemoryLRUCache.adoc#init, MemoryLRUCache>>, and <<kafka-streams-internals-RocksDBStore.adoc#init, RocksDBStore>>) are requested to <<kafka-streams-StateStore.adoc#init, initialize>>
+
+* <<kafka-streams-internals-ForwardingDisabledProcessorContext.adoc#, ForwardingDisabledProcessorContext>> is requested to <<kafka-streams-internals-ForwardingDisabledProcessorContext.adoc#register, register a state store (and a StateRestoreCallback)>>
+
+| schedule
+a| [[schedule]]
+
+[source, java]
+----
+Cancellable schedule(
+  Duration interval,
+  PunctuationType type,
+  Punctuator callback)
+----
+
+Schedules a <<kafka-streams-Punctuator.adoc#, Punctuator>> (a periodic action) to be executed at stream (`STREAM_TIME`) or system (`WALL_CLOCK_TIME`) time and that can be <<kafka-streams-Cancellable.adoc#, cancelled>>
+
+* `STREAM_TIME` advances by the processing of messages in accordance with the timestamp as extracted by the <<kafka-streams-TimestampExtractor.adoc#, TimestampExtractor>>
+
+* `WALL_CLOCK_TIME` uses the system time which advances at the <<kafka-streams-properties.adoc#poll.ms, polling interval>>
+
+| stateDir
+a| [[stateDir]]
+
+[source, java]
+----
+File stateDir()
+----
+
+| taskId
+a| [[taskId]]
+
+[source, java]
+----
+TaskId taskId()
+----
+
+| timestamp
+a| [[timestamp]]
+
+[source, java]
+----
+long timestamp()
+----
+
+| topic
+a| [[topic]]
+
+[source, java]
+----
+String topic()
+----
+
+| valueSerde
+a| [[valueSerde]]
+
+[source, java]
+----
+Serde<?> valueSerde()
+----
+|===
+
+[[implementations]]
+.ProcessorContexts (Direct Implementations and Extensions)
+[cols="30,70",options="header",width="100%"]
+|===
+| ProcessorContext
+| Description
+
+| <<kafka-streams-internals-ForwardingDisabledProcessorContext.adoc#, ForwardingDisabledProcessorContext>>
+| [[ForwardingDisabledProcessorContext]]
+
+| <<kafka-streams-internals-InternalProcessorContext.adoc#, InternalProcessorContext>>
+| [[InternalProcessorContext]] Extension of `ProcessorContext`
+
+|===

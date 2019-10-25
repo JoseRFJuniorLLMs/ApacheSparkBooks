@@ -1,0 +1,475 @@
+== [[KStreamImpl]] KStreamImpl
+
+`KStreamImpl` is a concrete <<kafka-streams-internals-AbstractStream.adoc#, stream>> and the default <<kafka-streams-KStream.adoc#, KStream>>.
+
+`KStreamImpl` is <<creating-instance, created>> every time a transformation is executed and when...FIXME
+
+[[SOURCE_NAME]]
+`KStreamImpl` uses *KSTREAM-SOURCE-* as the prefix for...FIXME
+
+[[SINK_NAME]]
+`KStreamImpl` uses *KSTREAM-SINK-* as the prefix for...FIXME
+
+[[TRANSFORMVALUES_NAME]]
+`KStreamImpl` uses *KSTREAM-TRANSFORMVALUES-* as the prefix for...FIXME
+
+[[internal-registries]]
+.KStreamImpl's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="1,2",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| [[defaultKeyValueMapper]] `defaultKeyValueMapper`
+| link:kafka-streams-KeyValueMapper.adoc[KeyValueMapper] that simply concatenates the key and the value of a record when link:kafka-streams-KeyValueMapper.adoc#apply[executed] (i.e. applied to a record stream)
+|===
+
+=== [[doStreamTableJoin]] `doStreamTableJoin` Internal Method
+
+[source, java]
+----
+KStream<K, VR> doStreamTableJoin(
+  KTable<K, VO> other,
+  ValueJoiner<? super V, ? super VO, ? extends VR> joiner,
+  Joined<K, V, VO> joined,
+  boolean leftJoin)
+----
+
+`doStreamTableJoin`...FIXME
+
+NOTE: `doStreamTableJoin` is used when `KStreamImpl` is requested to <<join, join>> and <<leftJoin, leftJoin>>.
+
+=== [[doJoin]] `doJoin` Internal Method
+
+[source, java]
+----
+KStream<K, VR> doJoin(
+  KStream<K, VO> other,
+  ValueJoiner<? super V, ? super VO, ? extends VR> joiner,
+  JoinWindows windows,
+  Joined<K, V, VO> joined,
+  KStreamImplJoin join)
+----
+
+`doJoin`...FIXME
+
+NOTE: `doJoin` is used when `KStreamImpl` is requested to <<join, join>>, <<outerJoin, outerJoin>> and <<leftJoin, leftJoin>>.
+
+=== [[transformValues]] Transforming Values with Optional State -- `transformValues` Method
+
+[source, java]
+----
+KStream<K, V1> transformValues(
+  final ValueTransformerSupplier<? super V, ? extends V1> valueTransformerSupplier,
+  final String... stateStoreNames)
+KStream<K, VR> transformValues(
+  final ValueTransformerWithKeySupplier<? super K, ? super V, ? extends VR> valueTransformerSupplier,
+  final String... stateStoreNames)
+----
+
+NOTE: `transformValues` is part of link:kafka-streams-KStream.adoc#transformValues[KStream Contract] for a stateful record-by-record value transformation.
+
+`transformValues`...FIXME
+
+`transformValues` reports a `NullPointerException` when either `ValueTransformerSupplier` or `ValueTransformerWithKeySupplier` is `null`.
+
+=== [[process]] `process` Method
+
+[source, java]
+----
+void process(
+  ProcessorSupplier<? super K, ? super V> processorSupplier,
+  String... stateStoreNames)
+----
+
+NOTE: `process` is part of link:kafka-streams-KStream.adoc#process[KStream Contract] for...FIXME
+
+`process`...FIXME
+
+=== [[transform]] Transforming Record Into Zero or More Output Records with State (Stateful Transformation) -- `transform` Operator
+
+[source, java]
+----
+KStream<K1, V1> transform(
+  TransformerSupplier<
+    ? super K,
+    ? super V,
+    KeyValue<K1, V1>> transformerSupplier,
+  String... stateStoreNames)
+----
+
+NOTE: `transform` is part of <<kafka-streams-KStream.adoc#transform, KStream API>> to transform a record into zero or more output records with state.
+
+`transform` requests <<builder, InternalStreamsBuilder>> for a new processor name with *KSTREAM-TRANSFORM* prefix.
+
+`transform` then creates a new `KStreamTransform` (for the input `transformerSupplier`) and requests `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addProcessor[register] a new processor supplier under the name.
+
+NOTE: `transform` uses <<builder, InternalStreamsBuilder>> to access the current link:kafka-streams-internals-InternalStreamsBuilder.adoc#internalTopologyBuilder[InternalTopologyBuilder].
+
+`transform` requests `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#connectProcessorAndStateStores[connect the processor supplier with state stores] if specified.
+
+In the end, `transform` creates a new <<creating-instance, KStreamImpl>> for the processor name and <<repartitionRequired, repartitionRequired>> flag turned on.
+
+`transform` reports a `NullPointerException` when `transformerSupplier` is `null`.
+
+=== [[mapValues]] Registering Processor Node with KStreamMapValues Processor Supplier and KSTREAM-MAPVALUES Prefix -- `mapValues` Operator
+
+[source, java]
+----
+<V1> KStream<K, V1> mapValues(final ValueMapper<? super V, ? extends V1> mapper)
+----
+
+NOTE: `mapValues` is part of link:kafka-streams-KStream.adoc#mapValues[KStream Contract] to...FIXME.
+
+`mapValues` creates a new `KStreamImpl` for a new processor (with the current <<builder, InternalStreamsBuilder>>, <<sourceNodes, source nodes>> and <<repartitionRequired, repartitionRequired>> flag).
+
+Internally, `mapValues` requests <<builder, InternalStreamsBuilder>> for a new processor name with *KSTREAM-MAPVALUES* prefix and link:kafka-streams-internals-InternalTopologyBuilder.adoc#addProcessor[registers] a `KStreamMapValues` processor supplier under the name.
+
+NOTE: `mapValues` uses <<builder, InternalStreamsBuilder>> to access the current link:kafka-streams-internals-InternalStreamsBuilder.adoc#internalTopologyBuilder[InternalTopologyBuilder].
+
+=== [[through]] Passing Stream Through Topic -- `through` Method
+
+[source, java]
+----
+KStream<K, V> through(
+  String topic) // <1>
+KStream<K, V> through(
+  String topic,
+  Produced<K, V> produced)
+----
+<1> Uses <<kafka-streams-Produced.adoc#with, Produced.with>> factory method to create a `Produced`
+
+NOTE: `through` is part of <<kafka-streams-KStream.adoc#through, KStream Contract>> to materialize a stream to a topic (_pass it through_) and create a new `KStream` from the topic (using the <<kafka-streams-Produced.adoc#, Produced>> for configuration).
+
+`through` creates a new <<kafka-streams-internals-ProducedInternal.adoc#, ProducedInternal>> for the given <<kafka-streams-Produced.adoc#, Produced>> and sets the key and value serdes if both `null` with the <<kafka-streams-internals-AbstractStream.adoc#keySerde, keySerde>> and <<kafka-streams-internals-AbstractStream.adoc#valSerde, valSerde>>, respectively.
+
+`through` <<to, writes the stream to the topic>> (with the `ProducedInternal`).
+
+In the end, `through` creates a <<kafka-streams-internals-ConsumedInternal.adoc#, ConsumedInternal>> (with <<kafka-streams-FailOnInvalidTimestamp.adoc#, FailOnInvalidTimestamp>> timestamp extractor) and requests the <<kafka-streams-internals-AbstractStream.adoc#builder, InternalStreamsBuilder>> to <<kafka-streams-internals-InternalStreamsBuilder.adoc#stream, create a KStream to read from the topic>>.
+
+=== [[print]] Registering Processor Node with KStreamPrint Processor Supplier and KSTREAM-PRINTER Prefix -- `print` Operator
+
+[source, java]
+----
+void print(final Printed<K, V> printed)
+----
+
+NOTE: `print` is part of link:kafka-streams-KStream.adoc#print[KStream Contract] to...FIXME.
+
+`print` creates a `PrintedInternal` for the input link:kafka-streams-Printed.adoc[Printed].
+
+`print` requests <<builder, InternalStreamsBuilder>> for a new processor name with *KSTREAM-PRINTER* prefix and link:kafka-streams-internals-InternalTopologyBuilder.adoc#addProcessor[registers] a `KStreamPrint` (with `PrintForeachAction`) processor supplier under the name.
+
+NOTE: `print` uses <<builder, InternalStreamsBuilder>> to access the current link:kafka-streams-internals-InternalStreamsBuilder.adoc#internalTopologyBuilder[InternalTopologyBuilder].
+
+=== [[to]] Adding StreamSinkNode to Node Graph -- `to` Operator
+
+[source, java]
+----
+void to(
+  String topic) // <1>
+void to(
+  String topic,
+  Produced<K, V> produced)
+void to(
+  TopicNameExtractor<K, V> topicExtractor)
+void to(
+  TopicNameExtractor<K, V> topicExtractor,
+  Produced<K, V> produced)
+----
+<1> Calls the other `to` with `Produced` of `nulls`
+
+NOTE: `to` is part of link:kafka-streams-KStream.adoc#to[KStream Contract] to...FIXME.
+
+`to` merely passes the call on to the internal <<to-internal, to>> with a new `ProducedInternal` for the input link:kafka-streams-Produced.adoc[Produced].
+
+==== [[to-internal]] `to` Internal Method
+
+[source, java]
+----
+void to(
+  final TopicNameExtractor<K, V> topicExtractor,
+  final ProducedInternal<K, V> produced)
+----
+
+`to` requests the <<builder, InternalStreamsBuilder>> for a <<kafka-streams-internals-InternalStreamsBuilder.adoc#newProcessorName, new processor name>> with <<SINK_NAME, KSTREAM-SINK>> prefix.
+
+`to` creates a new <<kafka-streams-internals-StreamSinkNode.adoc#, StreamSinkNode>> and requests the <<builder, InternalStreamsBuilder>> to <<kafka-streams-internals-InternalStreamsBuilder.adoc#addGraphNode, add it>> to the <<streamsGraphNode, parent StreamsGraphNode>>.
+
+NOTE: `to` is used in <<to, to>> operators.
+
+=== [[repartitionForJoin]] `repartitionForJoin` Internal Method
+
+[source, scala]
+----
+KStreamImpl<K, V> repartitionForJoin(
+  final Serde<K> keySerde,
+  final Serde<V> valSerde)
+----
+
+`repartitionForJoin`...FIXME
+
+NOTE: `repartitionForJoin` is used when...FIXME
+
+=== [[creating-instance]] Creating KStreamImpl Instance
+
+`KStreamImpl` takes the following when created:
+
+* [[name]] *Name*
+* [[keySerde]] `Serde` for keys
+* [[valueSerde]] `Serde` for values
+* [[sourceNodes]] *Names of the source nodes*
+* [[repartitionRequired]] *repartitionRequired* flag
+* [[streamsGraphNode]] Parent <<kafka-streams-internals-StreamsGraphNode.adoc#, StreamsGraphNode>>
+* [[builder]] <<kafka-streams-internals-InternalStreamsBuilder.adoc#, InternalStreamsBuilder>>
+
+`KStreamImpl` initializes the <<internal-registries, internal registries and counters>>.
+
+==== [[transformValues-private]] Transforming Values with State -- `transformValues` Internal Method
+
+[source, java]
+----
+private <VR> KStream<K, VR> transformValues(
+  final InternalValueTransformerWithKeySupplier<? super K, ? super V, ? extends VR> internalValueTransformerWithKeySupplier,
+  final String... stateStoreNames)
+----
+
+`transformValues` requests <<builder, InternalStreamsBuilder>> for a new processor name with *KSTREAM-TRANSFORMVALUES* prefix.
+
+`transformValues` then creates a new link:kafka-streams-internals-KStreamTransformValues.adoc#creating-instance[KStreamTransformValues] (for the input `internalValueTransformerWithKeySupplier`) and requests `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addProcessor[register] a new processor supplier under the name.
+
+NOTE: `transformValues` uses <<builder, InternalStreamsBuilder>> to access the current link:kafka-streams-internals-InternalStreamsBuilder.adoc#internalTopologyBuilder[InternalTopologyBuilder].
+
+`transformValues` requests `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#connectProcessorAndStateStores[connect the processor supplier with state stores] if specified.
+
+In the end, `transformValues` creates a new <<creating-instance, KStreamImpl>> for the processor name.
+
+NOTE: `transformValues` is used exclusively when `KStreamImpl` is requested to <<transformValues, transformValues>>.
+
+=== [[createReparitionedSource]] `createReparitionedSource` Static Method
+
+[source, java]
+----
+String createReparitionedSource(
+  final InternalStreamsBuilder builder,
+  final Serde<K1> keySerde,
+  final Serde<V1> valSerde,
+  final String topicNamePrefix,
+  final String name)
+----
+
+`createReparitionedSource` requests the input `InternalStreamsBuilder` for the link:kafka-streams-internals-InternalStreamsBuilder.adoc#internalTopologyBuilder[InternalTopologyBuilder] and does the following:
+
+* Requests the `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addInternalTopic[addInternalTopic] with the topic name as the input `topicNamePrefix` (if defined) or the input `name` and `-repartition` suffix
+
+* Requests the `InternalStreamsBuilder` for a link:kafka-streams-internals-InternalStreamsBuilder.adoc#newProcessorName[new processor name] with `KSTREAM-FILTER-` prefix and requests the `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addProcessor[addProcessor] with the new processor name and a new <<kafka-streams-internals-KStreamFilter.adoc#, KStreamFilter>> (that filters out `null` keys) and the `name` predecessor
+
+* Requests the `InternalStreamsBuilder` for a link:kafka-streams-internals-InternalStreamsBuilder.adoc#newProcessorName[new processor name] with `KSTREAM-SINK-` prefix and requests the `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addSink[add a sink node] with the new processor name, the repartition topic and the new `KStreamFilter` as a predecessor
+
+* Requests the `InternalStreamsBuilder` for a link:kafka-streams-internals-InternalStreamsBuilder.adoc#newProcessorName[new processor name] with `KSTREAM-SOURCE-` prefix (aka `sourceName`) and requests the `InternalTopologyBuilder` to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addSource[add a source node] with the new processor name, a link:kafka-streams-FailOnInvalidTimestamp.adoc[FailOnInvalidTimestamp] and the repartition topic
+
+In the end, `createReparitionedSource` returns the source name.
+
+[source, scala]
+----
+// CAUTION: FIXME Example
+----
+
+[NOTE]
+====
+`createReparitionedSource` is used when:
+
+* `GroupedStreamAggregateBuilder` is requested to <<kafka-streams-internals-GroupedStreamAggregateBuilder.adoc#repartitionIfRequired, repartitionIfRequired>>
+
+* `KStreamImpl` is requested to <<repartitionForJoin, repartitionForJoin>>
+====
+
+=== [[createWindowedStateStore]] `createWindowedStateStore` Internal Static Method
+
+[source, java]
+----
+<K, V> StoreBuilder<WindowStore<K, V>> createWindowedStateStore(
+  final JoinWindows windows,
+  final Serde<K> keySerde,
+  final Serde<V> valueSerde,
+  final String storeName)
+----
+
+`createWindowedStateStore`...FIXME
+
+NOTE: `createWindowedStateStore` is used exclusively when `KStreamImplJoin` is requested to <<kafka-streams-internals-KStreamImpl-KStreamImplJoin.adoc#join, join>>.
+
+=== [[groupBy]] `groupBy` Method
+
+[source, java]
+----
+KGroupedStream<KR, V> groupBy(
+  final KeyValueMapper<? super K, ? super V, KR> selector)
+KGroupedStream<KR, V> groupBy(
+  final KeyValueMapper<? super K, ? super V, KR> selector,
+  final Grouped<KR, V> grouped)
+----
+
+NOTE: `groupBy` is part of the <<kafka-streams-KStream.adoc#groupBy, KStream Contract>> to...FIXME.
+
+`groupBy`...FIXME
+
+=== [[groupByKey]] `groupByKey` Method
+
+[source, java]
+----
+KGroupedStream<K, V> groupByKey()
+KGroupedStream<K, V> groupByKey(final Grouped<K, V> grouped)
+----
+
+NOTE: `groupByKey` is part of the <<kafka-streams-KStream.adoc#groupByKey, KStream Contract>> to...FIXME.
+
+`groupByKey`...FIXME
+
+=== [[filter]] `filter` Method
+
+[source, java]
+----
+KStream<K, V> filter(final Predicate<? super K, ? super V> predicate)
+----
+
+NOTE: `filter` is part of the <<kafka-streams-KStream.adoc#filter, KStream Contract>> to...FIXME.
+
+`filter`...FIXME
+
+=== [[filterNot]] `filterNot` Method
+
+[source, java]
+----
+KStream<K, V> filterNot(final Predicate<? super K, ? super V> predicate)
+----
+
+NOTE: `filterNot` is part of the <<kafka-streams-KStream.adoc#filterNot, KStream Contract>> to...FIXME.
+
+`filterNot`...FIXME
+
+=== [[flatTransform]] `flatTransform` Method
+
+[source, java]
+----
+KStream<K1, V1> flatTransform(
+  TransformerSupplier<
+    ? super K,
+    ? super V,
+    Iterable<KeyValue<K1, V1>>> transformerSupplier,
+  String... stateStoreNames)
+----
+
+NOTE: `flatTransform` is part of the <<kafka-streams-KStream.adoc#flatTransform, KStream Contract>> to...FIXME.
+
+`flatTransform`...FIXME
+
+=== [[flatTransformValues]] `flatTransformValues` Method
+
+[source, java]
+----
+KStream<K, VR> flatTransformValues(
+  ValueTransformerSupplier<
+    ? super V,
+    Iterable<VR>> valueTransformerSupplier,
+  String... stateStoreNames)
+KStream<K, VR> flatTransformValues(
+  ValueTransformerWithKeySupplier<
+    ? super K,
+    ? super V,
+    Iterable<VR>> valueTransformerSupplier,
+  String... stateStoreNames)
+----
+
+NOTE: `flatTransformValues` is part of the <<kafka-streams-KStream.adoc#flatTransformValues, KStream Contract>> to...FIXME.
+
+`flatTransformValues`...FIXME
+
+=== [[doTransformValues]] `doTransformValues` Internal Method
+
+[source, java]
+----
+KStream<K, VR> doTransformValues(
+  ValueTransformerWithKeySupplier<
+    ? super K,
+    ? super V,
+    ? extends VR> valueTransformerWithKeySupplier,
+  String... stateStoreNames)
+----
+
+`doTransformValues` requests the <<builder, InternalStreamsBuilder>> for a <<kafka-streams-internals-InternalStreamsBuilder.adoc#newProcessorName, new processor name>> with <<TRANSFORMVALUES_NAME, KSTREAM-TRANSFORMVALUES>> prefix.
+
+`doTransformValues` creates a new <<kafka-streams-internals-StatefulProcessorNode.adoc#, StatefulProcessorNode>> with the new processor name, the given `stateStoreNames` and the <<repartitionRequired, repartitionRequired>> flag.
+
+`doTransformValues` requests the `StatefulProcessorNode` to <<kafka-streams-internals-StreamsGraphNode.adoc#setValueChangingOperation, setValueChangingOperation>>.
+
+`doTransformValues` requests the <<builder, InternalStreamsBuilder>> to <<kafka-streams-internals-InternalStreamsBuilder.adoc#addGraphNode, add>> the `StatefulProcessorNode` (with the <<kafka-streams-internals-AbstractStream.adoc#streamsGraphNode, StreamsGraphNode>> as the parent).
+
+In the end, `doTransformValues` creates a new <<creating-instance, KStreamImpl>> (with the new processor name, the <<sourceNodes, sourceNodes>>, the <<repartitionRequired, repartitionRequired>> flag, the `StatefulProcessorNode` itself and the <<builder, InternalStreamsBuilder>>).
+
+NOTE: `doTransformValues` is used exclusively when `KStreamImpl` is requested to <<transformValues, transformValues>>.
+
+=== [[internalSelectKey]] `internalSelectKey` Internal Method
+
+[source, java]
+----
+ProcessorGraphNode<K, V> internalSelectKey(
+  final KeyValueMapper<? super K, ? super V, ? extends KR> mapper)
+----
+
+`internalSelectKey`...FIXME
+
+NOTE: `internalSelectKey` is used when `KStreamImpl` is requested to <<selectKey, selectKey>> and <<groupBy, groupBy>>.
+
+=== [[doFlatTransform]] `doFlatTransform` Internal Method
+
+[source, java]
+----
+KStream<K1, V1> doFlatTransform(
+  TransformerSupplier<
+    ? super K,
+    ? super V,
+    Iterable<KeyValue<K1, V1>>> transformerSupplier,
+  String... stateStoreNames)
+----
+
+`doFlatTransform`...FIXME
+
+NOTE: `doFlatTransform` is used when `KStreamImpl` is requested to <<transform, transform>> and <<flatTransform, flatTransform>>.
+
+=== [[doFlatTransformValues]] `doFlatTransformValues` Internal Method
+
+[source, java]
+----
+KStream<K, VR> doFlatTransformValues(
+  ValueTransformerWithKeySupplier<
+    ? super K,
+    ? super V,
+    Iterable<VR>> valueTransformerWithKeySupplier,
+  String... stateStoreNames)
+----
+
+`doFlatTransformValues`...FIXME
+
+NOTE: `doFlatTransformValues` is used exclusively when `KStreamImpl` is requested to <<flatTransformValues, flatTransformValues>>.
+
+=== [[globalTableJoin]] `globalTableJoin` Internal Method
+
+[source, java]
+----
+KStream<K, VR> globalTableJoin(
+  GlobalKTable<KG, VG> globalTable,
+  KeyValueMapper<
+    ? super K,
+    ? super V,
+    ? extends KG> keyMapper,
+  ValueJoiner<
+    ? super V,
+    ? super VG,
+    ? extends VR> joiner,
+  boolean leftJoin)
+----
+
+`globalTableJoin`...FIXME
+
+NOTE: `globalTableJoin` is used when `KStreamImpl` is requested to <<join, join>> and <<leftJoin, leftJoin>>.

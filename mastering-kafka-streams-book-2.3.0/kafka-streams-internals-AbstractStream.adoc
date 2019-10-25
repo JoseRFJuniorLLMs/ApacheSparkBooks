@@ -1,0 +1,109 @@
+== [[AbstractStream]] AbstractStream
+
+`AbstractStream` is the base abstraction of the <<implementations, streams>>.
+
+[[implementations]]
+.AbstractStreams
+[cols="30,70",options="header",width="100%"]
+|===
+| AbstractStream
+| Description
+
+| <<kafka-streams-internals-KGroupedStreamImpl.adoc#, KGroupedStreamImpl>>
+| [[KGroupedStreamImpl]]
+
+| <<kafka-streams-internals-KGroupedTableImpl.adoc#, KGroupedTableImpl>>
+| [[KGroupedTableImpl]]
+
+| <<kafka-streams-internals-KStreamImpl.adoc#, KStreamImpl>>
+| [[KStreamImpl]]
+
+| <<kafka-streams-internals-KTableImpl.adoc#, KTableImpl>>
+| [[KTableImpl]]
+
+| <<kafka-streams-internals-SessionWindowedKStreamImpl.adoc#, SessionWindowedKStreamImpl>>
+| [[SessionWindowedKStreamImpl]]
+
+| <<kafka-streams-internals-TimeWindowedKStreamImpl.adoc#, TimeWindowedKStreamImpl>>
+| [[TimeWindowedKStreamImpl]]
+
+|===
+
+[[creating-instance]]
+Every `AbstractStream` has the following properties:
+
+* [[name]] Name
+* [[keySerde]] Key Serde (`Serde<K>`)
+* [[valSerde]] Value Serde (`Serde<V>`)
+* [[sourceNodes]] Names of the source nodes (`Set<String>`)
+* [[streamsGraphNode]] <<kafka-streams-internals-StreamsGraphNode.adoc#, StreamsGraphNode>>
+* [[builder]] <<kafka-streams-internals-InternalStreamsBuilder.adoc#, InternalStreamsBuilder>>
+
+=== [[ensureJoinableWith]] `ensureJoinableWith` Method
+
+[source, java]
+----
+Set<String> ensureJoinableWith(
+  AbstractStream<K, ?> other)
+----
+
+`ensureJoinableWith`...FIXME
+
+[NOTE]
+====
+`ensureJoinableWith` is used when:
+
+* `KStreamImpl` is requested to <<kafka-streams-internals-KStreamImpl.adoc#join, join>>, <<kafka-streams-internals-KStreamImpl.adoc#outerJoin, outerJoin>> and <<kafka-streams-internals-KStreamImpl.adoc#leftJoin, leftJoin>>
+
+* `KTableImpl` is requested to <<kafka-streams-internals-KTableImpl.adoc#join, join>>, <<kafka-streams-internals-KTableImpl.adoc#leftJoin, leftJoin>> and <<kafka-streams-internals-KTableImpl.adoc#outerJoin, outerJoin>>
+====
+
+=== [[toValueTransformerWithKeySupplier]] `toValueTransformerWithKeySupplier` Static Method
+
+[source, java]
+----
+ValueTransformerWithKeySupplier<K, V, VR> toValueTransformerWithKeySupplier(
+  ValueTransformerSupplier<V, VR> valueTransformerSupplier)
+----
+
+`toValueTransformerWithKeySupplier`...FIXME
+
+NOTE: `toValueTransformerWithKeySupplier` is used when `KStreamImpl` is requested to <<kafka-streams-internals-KStreamImpl.adoc#transformValues, transformValues>> and <<kafka-streams-internals-KStreamImpl.adoc#flatTransformValues, flatTransformValues>>.
+
+=== [[reverseJoiner]] `reverseJoiner` Static Method
+
+[source, java]
+----
+ValueJoiner<T2, T1, R> reverseJoiner(
+  ValueJoiner<T1, T2, R> joiner)
+----
+
+`reverseJoiner`...FIXME
+
+[NOTE]
+====
+`reverseJoiner` is used when:
+
+* `KStreamImplJoin` is requested to <<kafka-streams-internals-KStreamImpl-KStreamImplJoin.adoc#join, join>> (for <<kafka-streams-internals-KStreamImpl.adoc#join, KStreamImpl.join>>, <<kafka-streams-internals-KStreamImpl.adoc#outerJoin, KStreamImpl.outerJoin>> and <<kafka-streams-internals-KStreamImpl.adoc#leftJoin, KStreamImpl.leftJoin>> operators)
+
+* `KTableImpl` is requested to <<kafka-streams-internals-KTableImpl.adoc#doJoin, doJoin>> (for <<kafka-streams-internals-KTableImpl.adoc#join, KTableImpl.join>>, <<kafka-streams-internals-KTableImpl.adoc#leftJoin, KTableImpl.leftJoin>> and <<kafka-streams-internals-KTableImpl.adoc#outerJoin, KTableImpl.outerJoin>> operators)
+====
+
+=== [[withKey]] `withKey` Static Method
+
+[source, java]
+----
+ValueMapperWithKey<K, V, VR> withKey(
+  ValueMapper<V, VR> valueMapper)
+----
+
+`withKey`...FIXME
+
+[NOTE]
+====
+`withKey` is used when:
+
+* `KStreamImpl` is requested to <<kafka-streams-internals-KStreamImpl.adoc#mapValues, mapValues>> and <<kafka-streams-internals-KStreamImpl.adoc#flatMapValues, flatMapValues>>
+
+* `KTableImpl` is requested to <<kafka-streams-internals-KTableImpl.adoc#mapValues, mapValues>>
+====

@@ -1,0 +1,62 @@
+== [[SessionStore]] SessionStore
+
+`SessionStore` is the <<contract, contract>> of <<implementations, state stores>> that <<FIXME, FIXME>>.
+
+[[contract]]
+[source, java]
+----
+package org.apache.kafka.streams.state;
+
+interface SessionStore<K, AGG> extends StateStore, ReadOnlySessionStore<K, AGG> {
+  KeyValueIterator<Windowed<K>, AGG> findSessions(final K key, long earliestSessionEndTime, final long latestSessionStartTime);
+  KeyValueIterator<Windowed<K>, AGG> findSessions(final K keyFrom, final K keyTo, long earliestSessionEndTime, final long latestSessionStartTime);
+  void put(final Windowed<K> sessionKey, final AGG aggregate);
+  void remove(final Windowed<K> sessionKey);
+}
+----
+
+.SessionStore Contract
+[cols="1,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| `findSessions`
+| [[findSessions]] Used when...FIXME
+
+| `put`
+a| [[put]] Storing an aggregated value for a session key
+
+Used when:
+
+* `KStreamSessionWindowAggregateProcessor` is requested to link:kafka-streams-internals-KStreamSessionWindowAggregateProcessor.adoc#process[process a key-value record]
+
+* `CachingSessionStore` is requested to link:kafka-streams-internals-CachingSessionStore.adoc#remove[remove a session key] and link:kafka-streams-internals-CachingSessionStore.adoc#putAndMaybeForward[putAndMaybeForward]
+
+* `ChangeLoggingSessionBytesStore` is requested to link:kafka-streams-internals-ChangeLoggingSessionBytesStore.adoc#put[store an aggregated value for a session key]
+
+* `MeteredSessionStore` is requested to link:kafka-streams-internals-MeteredSessionStore.adoc#put[store an aggregated value for a session key]
+
+| `remove`
+| [[remove]] Used when...FIXME
+|===
+
+[[implementations]]
+.SessionStores
+[cols="1,2",options="header",width="100%"]
+|===
+| SessionStore
+| Description
+
+| link:kafka-streams-internals-CachingSessionStore.adoc[CachingSessionStore]
+| [[CachingSessionStore]]
+
+| link:kafka-streams-internals-RocksDBSessionStore.adoc[RocksDBSessionStore]
+| [[RocksDBSessionStore]]
+
+| link:kafka-streams-internals-ChangeLoggingSessionBytesStore.adoc[ChangeLoggingSessionBytesStore]
+| [[ChangeLoggingSessionBytesStore]]
+
+| link:kafka-streams-internals-MeteredSessionStore.adoc[MeteredSessionStore]
+| [[MeteredSessionStore]]
+|===

@@ -1,0 +1,94 @@
+== Kafka Streams -- Stream Processing Library on Apache Kafka
+
+*Kafka Streams* is a library for developing applications for processing records from topics in Apache Kafka.
+
+A Kafka Streams application processes record streams through a <<kafka-streams-Topology.adoc#, topology>> (of stream processors). A Kafka Streams developer defines the processing logic using either the <<kafka-streams-streams-dsl.adoc#, high-level Streams DSL>> (with streams and tables) or <<kafka-streams-processor-api.adoc#, low-level Processor API>> (with stream processing nodes).
+
+Once you have defined the processing logic in the form of a Kafka Stream topology, you should define the execution environment of the application using link:kafka-streams-KafkaStreams.adoc[KafkaStreams] API that you link:kafka-streams-KafkaStreams.adoc#start[start] in the end.
+
+[source, scala]
+----
+object KafkaStreamsApp extends App {
+
+  // Step 0. Imports for Scala API for Kafka Streams
+  import org.apache.kafka.streams.scala._
+  import ImplicitConversions._
+  import Serdes._
+
+  // Step 1. Describe Topology
+  // Consume records from input topic and produce records to upper topic
+  val builder = new StreamsBuilder
+
+  val uppers = builder
+    .stream[String, String]("input") // Consume records as a stream
+    .mapValues(_.toUpperCase)        // Transform (map) the values
+
+  // Produce records to "upper" topic
+  uppers.to("upper")
+
+  // Print out records to stdout for debugging purposes
+  import org.apache.kafka.streams.kstream.Printed
+  val sysout = Printed
+    .toSysOut[String, String]
+    .withLabel("stdout")
+  uppers.print(sysout)
+
+  // Step 2. Build Topology
+  val topology = builder.build
+
+  // You can describe the topology and just finish
+  println(topology.describe())
+
+  // That finishes the "declaration" part of developing a Kafka Stream application
+  // Nothing is executed at this time (no threads have started yet)
+
+  // Step 3. Specify Configuration
+  import java.util.Properties
+  val props = new Properties()
+  import org.apache.kafka.streams.StreamsConfig
+  val appId = this.getClass.getSimpleName.replace("$", "")
+  props.put(StreamsConfig.APPLICATION_ID_CONFIG, appId)
+  props.put(StreamsConfig.CLIENT_ID_CONFIG, appId)
+  props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, ":9092")
+
+  // Step 4. Create Kafka Streams Client
+  import org.apache.kafka.streams.KafkaStreams
+  val ks = new KafkaStreams(topology, props)
+
+  // Step 5. Start Stream Processing, i.e. consuming, processing and producing records
+  ks.start
+}
+----
+
+Since Kafka Streams is a library, you should define it as the dependency of your Kafka Streams application.
+
+[source, scala]
+----
+val kafkaVer = {{ book.kafka_version }}
+libraryDependencies += "org.apache.kafka" % "kafka-streams" % kafkaVer
+libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % kafkaVer
+----
+
+On the outside, a typical Kafka Streams application is made up of two main objects, i.e. <<kafka-streams-Topology.adoc#, Topology>> and <<kafka-streams-KafkaStreams.adoc#, KafkaStreams>> (aka _streams client_).
+
+On the inside, the `KafkaStreams` object creates a <<kafka-streams-internals-StateDirectory.adoc#, StateDirectory>>, a `Metric` (with a `JmxReporter`), a <<kafka-streams-internals-StreamsMetadataState.adoc#, StreamsMetadataState>>, a <<kafka-streams-internals-GlobalStreamThread.adoc#, GlobalStreamThread>> and one or more <<kafka-streams-internals-StreamThread.adoc#, StreamThreads>>.
+
+`KafkaStreams` uses <<kafka-streams-properties.adoc#num.stream.threads, num.stream.threads>> configuration property for the number of `StreamThreads` to create (default: `1` processing thread).
+
+A single `StreamThread` creates a restore Kafka Consumer (`restoreConsumer`), a <<kafka-streams-internals-StoreChangelogReader.adoc#, StoreChangelogReader>>, a <<kafka-streams-internals-StreamsMetricsThreadImpl.adoc#, StreamsMetricsThreadImpl>>, a <<kafka-streams-internals-ThreadCache.adoc#, ThreadCache>>, a <<kafka-streams-internals-TaskCreator.adoc#, TaskCreator>> (for <<kafka-streams-internals-StreamTask.adoc#, StreamTasks>>), a <<kafka-streams-internals-StandbyTaskCreator.adoc#, StandbyTaskCreator>> (for <<kafka-streams-internals-StandbyTask.adoc#, StandbyTasks>>) and the <<kafka-streams-internals-TaskManager.adoc#, TaskManager>>.
+
+It is through the <<kafka-streams-internals-TaskManager.adoc#, TaskManager>> that a `StreamThread` manages the <<kafka-streams-internals-TaskManager.adoc#active, active stream tasks>> and <<kafka-streams-internals-TaskManager.adoc#process, processes records>>.
+
+A `StreamThread` creates also a <<kafka-streams-StreamThread-RebalanceListener.adoc#, RebalanceListener>> for...FIXME
+
+Eventually, `KafkaStreams` is <<kafka-streams-KafkaStreams.adoc#start, started>> and the Kafka Streams application starts consuming, processing, and producing records (as described by the <<kafka-streams-Topology.adoc#, Topology>>).
+
+When <<kafka-streams-KafkaStreams.adoc#start, started>>, `KafkaStreams` starts the <<kafka-streams-internals-GlobalStreamThread.adoc#, GlobalStreamThread>> and the <<kafka-streams-internals-StreamThread.adoc#, StreamThreads>>.
+
+A `StreamThread` <<kafka-streams-internals-StreamThread.adoc#runLoop, runs the main record processing loop>> that uses a https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html[KafkaConsumer] to link:++https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe-java.util.Collection-org.apache.kafka.clients.consumer.ConsumerRebalanceListener-++[subscribe] to the <<kafka-streams-internals-InternalTopologyBuilder.adoc#sourceTopicPattern, source topics>> of the topology (with the http://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/ConsumerRebalanceListener.html[ConsumerRebalanceListener] for dynamically assigned partitions).
+
+A `StreamThread` then uses the https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html[KafkaConsumer] to link:++https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#poll-java.time.Duration-++[fetch records] (from the <<kafka-streams-internals-InternalTopologyBuilder.adoc#sourceTopicPattern, source topics>>).
+
+`StreamThread` uses <<kafka-streams-properties.adoc#poll.ms, poll.ms>> configuration property for the poll time (default: `100L` milliseconds) or `0` when in `PARTITIONS_ASSIGNED` state.
+
+If there are records to process and there are <<kafka-streams-internals-TaskManager.adoc#hasActiveRunningTasks, active streams tasks>>, `StreamThread`...FIXME

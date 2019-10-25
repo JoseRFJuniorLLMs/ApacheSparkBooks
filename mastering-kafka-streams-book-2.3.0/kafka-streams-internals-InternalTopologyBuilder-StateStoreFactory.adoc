@@ -1,0 +1,8 @@
+== [[StateStoreFactory]] StateStoreFactory
+
+`StateStoreFactory` is the internal class of <<kafka-streams-internals-InternalTopologyBuilder.adoc#, InternalTopologyBuilder>> for...FIXME
+
+`StateStoreFactory` is <<creating-instance, created>> exclusively when `InternalTopologyBuilder` is requested to <<kafka-streams-internals-InternalTopologyBuilder.adoc#addStateStore, register a state store (as a StoreBuilder)>>.
+
+[[creating-instance]][[builder]]
+`StateStoreFactory` takes a single <<kafka-streams-StoreBuilder.adoc#, StoreBuilder>> to be created.

@@ -1,0 +1,255 @@
+== Settings
+
+The following settings (aka system properties) are specific to Spark on YARN.
+
+[cols="1,1,2",options="header",width="100%"]
+|===
+| Spark Property
+| Default Value
+| Description
+
+| [[spark.yarn.am.port]] `spark.yarn.am.port`
+| `0`
+| Port that link:spark-yarn-applicationmaster.adoc#runExecutorLauncher[`ApplicationMaster` uses] to create the *sparkYarnAM* RPC environment.
+
+| [[spark.yarn.am.waitTime]] `spark.yarn.am.waitTime`
+| `100s`
+| In milliseconds unless the unit is specified.
+
+| [[spark.yarn.app.id]] `spark.yarn.app.id`
+|
+|
+
+| [[spark.yarn.executor.memoryOverhead]] `spark.yarn.executor.memoryOverhead`
+| link:spark-yarn-YarnSparkHadoopUtil.adoc#MEMORY_OVERHEAD_FACTOR[10%] of link:../spark-Executor.adoc#spark.executor.memory[spark.executor.memory] but not less than `384`
+| (in MiBs) is an optional setting for the executor memory overhead (in addition to link:../spark-Executor.adoc#spark.executor.memory[spark.executor.memory]) when link:spark-yarn-client.adoc[requesting YARN resource containers from a YARN cluster].
+
+Used when link:spark-yarn-client.adoc#executorMemoryOverhead[`Client` calculates memory overhead for executors].
+
+|===
+
+=== [[spark.yarn.credentials.renewalTime]] spark.yarn.credentials.renewalTime
+
+`spark.yarn.credentials.renewalTime` (default: `Long.MaxValue` ms) is an internal setting for the time of the next credentials renewal.
+
+See link:spark-yarn-client.adoc#prepareLocalResources[prepareLocalResources].
+
+=== [[spark.yarn.credentials.updateTime]] spark.yarn.credentials.updateTime
+
+`spark.yarn.credentials.updateTime` (default: `Long.MaxValue` ms) is an internal setting for the time of the next credentials update.
+
+=== [[spark.yarn.rolledLog.includePattern]] spark.yarn.rolledLog.includePattern
+
+`spark.yarn.rolledLog.includePattern`
+
+=== [[spark.yarn.rolledLog.excludePattern]] spark.yarn.rolledLog.excludePattern
+
+`spark.yarn.rolledLog.excludePattern`
+
+=== [[spark.yarn.am.nodeLabelExpression]] spark.yarn.am.nodeLabelExpression
+
+`spark.yarn.am.nodeLabelExpression`
+
+=== [[spark.yarn.am.attemptFailuresValidityInterval]] spark.yarn.am.attemptFailuresValidityInterval
+
+`spark.yarn.am.attemptFailuresValidityInterval`
+
+=== [[spark.yarn.tags]] spark.yarn.tags
+
+`spark.yarn.tags`
+
+=== [[spark.yarn.am.extraLibraryPath]] spark.yarn.am.extraLibraryPath
+
+`spark.yarn.am.extraLibraryPath`
+
+=== [[spark.yarn.am.extraJavaOptions]] spark.yarn.am.extraJavaOptions
+
+`spark.yarn.am.extraJavaOptions`
+
+=== [[spark.yarn.scheduler.initial-allocation.interval]] spark.yarn.scheduler.initial-allocation.interval
+
+`spark.yarn.scheduler.initial-allocation.interval` (default: `200ms`) controls the initial allocation interval.
+
+It is used when link:spark-yarn-applicationmaster.adoc#creating-instance[`ApplicationMaster` is instantiated].
+
+=== [[spark.yarn.scheduler.heartbeat.interval-ms]] spark.yarn.scheduler.heartbeat.interval-ms
+
+`spark.yarn.scheduler.heartbeat.interval-ms` (default: `3s`) is the heartbeat interval to YARN ResourceManager.
+
+It is used when link:spark-yarn-applicationmaster.adoc#creating-instance[`ApplicationMaster` is instantiated].
+
+=== [[spark.yarn.max.executor.failures]] spark.yarn.max.executor.failures
+
+`spark.yarn.max.executor.failures` is an optional setting that sets the maximum number of executor failures before...TK
+
+It is used when link:spark-yarn-applicationmaster.adoc#creating-instance[`ApplicationMaster` is instantiated].
+
+CAUTION: FIXME
+
+=== [[spark.yarn.maxAppAttempts]] spark.yarn.maxAppAttempts
+
+`spark.yarn.maxAppAttempts` is the maximum number of attempts to register link:spark-yarn-applicationmaster.adoc[ApplicationMaster] before deploying a Spark application to YARN is deemed failed.
+
+It is used when link:spark-yarn-yarnrmclient.adoc#getMaxRegAttempts[`YarnRMClient` computes `getMaxRegAttempts`].
+
+=== [[spark.yarn.user.classpath.first]] spark.yarn.user.classpath.first
+
+CAUTION: FIXME
+
+=== [[spark.yarn.archive]] spark.yarn.archive
+
+`spark.yarn.archive` is the location of the archive containing jars files with Spark classes. It cannot be a `local:` URI.
+
+It is used to link:spark-yarn-client.adoc#populateClasspath[populate CLASSPATH for `ApplicationMaster` and executors].
+
+=== [[spark.yarn.queue]] spark.yarn.queue
+
+`spark.yarn.queue` (default: `default`) is the name of the YARN resource queue that link:spark-yarn-client.adoc#createApplicationSubmissionContext[`Client` uses to submit a Spark application to].
+
+You can specify the value using link:../spark-submit.adoc#queue[spark-submit's `--queue` command-line argument].
+
+The value is used to set YARN's link:++https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/api/records/ApplicationSubmissionContext.html#setQueue(java.lang.String)++[ApplicationSubmissionContext.setQueue].
+
+=== [[spark.yarn.jars]] spark.yarn.jars
+
+`spark.yarn.jars` is the location of the Spark jars.
+
+```
+--conf spark.yarn.jar=hdfs://master:8020/spark/spark-assembly-2.0.0-hadoop2.7.2.jar
+```
+
+It is used to link:spark-yarn-client.adoc#populateClasspath[populate the CLASSPATH for `ApplicationMaster` and `ExecutorRunnables`] (when <<spark.yarn.archive, spark.yarn.archive>> is not defined).
+
+NOTE: `spark.yarn.jar` setting is deprecated as of Spark 2.0.
+
+=== [[spark.yarn.report.interval]] spark.yarn.report.interval
+
+`spark.yarn.report.interval` (default: `1s`) is the interval (in milliseconds) between reports of the current application status.
+
+It is used in link:spark-yarn-client.adoc#monitorApplication[Client.monitorApplication].
+
+=== [[spark.yarn.dist.jars]] spark.yarn.dist.jars
+
+`spark.yarn.dist.jars` (default: empty) is a collection of additional jars to distribute.
+
+It is used when link:spark-yarn-client.adoc#[Client distributes additional resources] as specified using <<spark-submit, `--jars` command-line option for spark-submit>>.
+
+=== [[spark.yarn.dist.files]] spark.yarn.dist.files
+
+`spark.yarn.dist.files` (default: empty) is a collection of additional files to distribute.
+
+It is used when link:spark-yarn-client.adoc#[Client distributes additional resources] as specified using <<spark-submit, `--files` command-line option for spark-submit>>.
+
+=== [[spark.yarn.dist.archives]] spark.yarn.dist.archives
+
+`spark.yarn.dist.archives` (default: empty) is a collection of additional archives to distribute.
+
+It is used when link:spark-yarn-client.adoc#[Client distributes additional resources] as specified using <<spark-submit, `--archives` command-line option for spark-submit>>.
+
+=== [[spark.yarn.principal]] spark.yarn.principal
+
+`spark.yarn.principal` -- See the corresponding <<spark-submit, --principal command-line option for spark-submit>>.
+
+=== [[spark.yarn.keytab]] spark.yarn.keytab
+
+`spark.yarn.keytab` -- See the corresponding <<spark-submit, --keytab command-line option for spark-submit>>.
+
+=== [[spark.yarn.submit.file.replication]] spark.yarn.submit.file.replication
+
+`spark.yarn.submit.file.replication` is the replication factor (number) for files uploaded by Spark to HDFS.
+
+=== [[spark.yarn.config.gatewayPath]] spark.yarn.config.gatewayPath
+
+`spark.yarn.config.gatewayPath` (default: `null`) is the root of configuration paths that is present on gateway nodes, and will be replaced with the corresponding path in cluster machines.
+
+It is used when link:spark-yarn-client.adoc#getClusterPath[`Client` resolves a path to be YARN NodeManager-aware].
+
+=== [[spark.yarn.config.replacementPath]] spark.yarn.config.replacementPath
+
+`spark.yarn.config.replacementPath` (default: `null`) is the path to use as a replacement for <<spark.yarn.config.gatewayPath, spark.yarn.config.gatewayPath>> when launching processes in the YARN cluster.
+
+It is used when link:spark-yarn-client.adoc#getClusterPath[`Client` resolves a path to be YARN NodeManager-aware].
+
+=== [[spark.yarn.historyServer.address]] spark.yarn.historyServer.address
+
+`spark.yarn.historyServer.address` is the optional address of the History Server.
+
+=== [[spark.yarn.access.namenodes]] spark.yarn.access.namenodes
+
+`spark.yarn.access.namenodes` (default: empty) is a list of extra NameNode URLs for which to request delegation tokens. The NameNode that hosts fs.defaultFS does not need to be listed here.
+
+=== [[spark.yarn.cache.types]] spark.yarn.cache.types
+
+`spark.yarn.cache.types` is an internal setting...
+
+=== [[spark.yarn.cache.visibilities]] spark.yarn.cache.visibilities
+
+`spark.yarn.cache.visibilities` is an internal setting...
+
+=== [[spark.yarn.cache.timestamps]] spark.yarn.cache.timestamps
+
+`spark.yarn.cache.timestamps` is an internal setting...
+
+=== [[spark.yarn.cache.filenames]] spark.yarn.cache.filenames
+
+`spark.yarn.cache.filenames` is an internal setting...
+
+=== [[spark.yarn.cache.sizes]] spark.yarn.cache.sizes
+
+`spark.yarn.cache.sizes` is an internal setting...
+
+=== [[spark.yarn.cache.confArchive]] spark.yarn.cache.confArchive
+
+`spark.yarn.cache.confArchive` is an internal setting...
+
+=== [[spark.yarn.secondary.jars]] spark.yarn.secondary.jars
+
+`spark.yarn.secondary.jars` is...
+
+=== [[spark.yarn.executor.nodeLabelExpression]] spark.yarn.executor.nodeLabelExpression
+
+`spark.yarn.executor.nodeLabelExpression` is a node label expression for executors.
+
+=== [[spark.yarn.containerLauncherMaxThreads]] spark.yarn.containerLauncherMaxThreads
+
+`spark.yarn.containerLauncherMaxThreads` (default: `25`)...FIXME
+
+=== [[spark.yarn.executor.failuresValidityInterval]] spark.yarn.executor.failuresValidityInterval
+
+`spark.yarn.executor.failuresValidityInterval` (default: `-1L`) is an interval (in milliseconds) after which Executor failures will be considered independent and not accumulate towards the attempt count.
+
+=== [[spark.yarn.submit.waitAppCompletion]] spark.yarn.submit.waitAppCompletion
+
+`spark.yarn.submit.waitAppCompletion` (default: `true`) is a flag to control whether to wait for the application to finish before exiting the launcher process in cluster mode.
+
+=== [[spark.yarn.am.cores]] spark.yarn.am.cores
+
+`spark.yarn.am.cores` (default: `1`) sets the number of CPU cores for ApplicationMaster's JVM.
+
+=== [[spark.yarn.driver.memoryOverhead]] spark.yarn.driver.memoryOverhead
+
+`spark.yarn.driver.memoryOverhead` (in MiBs)
+
+=== [[spark.yarn.am.memoryOverhead]] spark.yarn.am.memoryOverhead
+
+`spark.yarn.am.memoryOverhead` (in MiBs)
+
+=== [[spark.yarn.am.memory]] spark.yarn.am.memory
+
+`spark.yarn.am.memory` (default: `512m`) sets the memory size of ApplicationMaster's JVM (in MiBs)
+
+=== [[spark.yarn.stagingDir]] spark.yarn.stagingDir
+
+`spark.yarn.stagingDir` is a staging directory used while submitting applications.
+
+=== [[spark.yarn.preserve.staging.files]] spark.yarn.preserve.staging.files
+
+`spark.yarn.preserve.staging.files` (default: `false`) controls whether to preserve temporary files in a staging directory (as pointed by <<spark.yarn.stagingDir, spark.yarn.stagingDir>>).
+
+=== [[spark.yarn.credentials.file]] spark.yarn.credentials.file
+
+`spark.yarn.credentials.file` ...
+
+=== [[spark.yarn.launchContainers]] spark.yarn.launchContainers
+
+`spark.yarn.launchContainers` (default: `true`) is a flag used for testing only so link:spark-yarn-YarnAllocator.adoc#runAllocatedContainers[`YarnAllocator` does not run launch `ExecutorRunnables` on allocated YARN containers].

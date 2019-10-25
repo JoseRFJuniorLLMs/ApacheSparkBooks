@@ -1,0 +1,275 @@
+= Spark Configuration Properties
+
+[[properties]]
+.Spark Configuration Properties
+[cols="1m,1",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| spark.default.parallelism
+a| [[spark.default.parallelism]] Number of partitions to use for <<spark-rdd-HashPartitioner.adoc#, HashPartitioner>>.
+
+`spark.default.parallelism` corresponds to link:spark-SchedulerBackend.adoc#defaultParallelism[default parallelism] of a scheduler backend and is as follows:
+
+* The number of threads for link:local/spark-LocalSchedulerBackend.adoc[LocalSchedulerBackend].
+* the number of CPU cores in link:spark-mesos.adoc#defaultParallelism[Spark on Mesos] and defaults to `8`.
+* Maximum of `totalCoreCount` and `2` in link:spark-CoarseGrainedSchedulerBackend.adoc#defaultParallelism[CoarseGrainedSchedulerBackend].
+
+| spark.diskStore.subDirectories
+a| [[spark.diskStore.subDirectories]]
+
+Default: `64`
+
+| spark.driver.maxResultSize
+a| [[maxResultSize]][[spark.driver.maxResultSize]][[MAX_RESULT_SIZE]] The maximum size of all results of the tasks in a `TaskSet`
+
+Default: `1g`
+
+Used when:
+
+* `Executor` is <<spark-Executor.adoc#maxResultSize, created>> (and later for a <<spark-Executor-TaskRunner.adoc#, TaskRunner>>)
+
+* `TaskSetManager` is <<spark-scheduler-TaskSetManager.adoc#maxResultSize, created>> (and later requested to <<spark-scheduler-TaskSetManager.adoc#canFetchMoreResults, check available memory for task results>>)
+
+| spark.executor.extraClassPath
+a| [[spark.executor.extraClassPath]][[EXECUTOR_CLASS_PATH]] *User-defined class path for executors*, i.e. URLs representing user-defined class path entries that are added to an executor's class path. URLs are separated by system-dependent path separator, i.e. `:` on Unix-like systems and `;` on Microsoft Windows.
+
+Default: `(empty)`
+
+Used when:
+
+* Spark Standalone's `StandaloneSchedulerBackend` is requested to xref:spark-standalone:spark-standalone-StandaloneSchedulerBackend.adoc#start[start] (and creates a command for <<spark-CoarseGrainedExecutorBackend.adoc#, CoarseGrainedExecutorBackend>>)
+
+* Spark local's `LocalSchedulerBackend` is requested for the xref:spark-local:spark-LocalSchedulerBackend.adoc#getUserClasspath[user-defined class path for executors]
+
+* Spark on Mesos' `MesosCoarseGrainedSchedulerBackend` is requested to xref:spark-on-mesos:spark-mesos-MesosCoarseGrainedSchedulerBackend.adoc#createCommand[create a command for CoarseGrainedExecutorBackend]
+
+* Spark on Mesos' `MesosFineGrainedSchedulerBackend` is requested to create a command for `MesosExecutorBackend`
+
+* Spark on Kubernetes' `BasicExecutorFeatureStep` is requested to `configurePod`
+
+* Spark on YARN's `ExecutorRunnable` is requested to xref:spark-on-yarn:spark-yarn-ExecutorRunnable.adoc#prepareEnvironment[prepareEnvironment] (for `CoarseGrainedExecutorBackend`)
+
+| spark.executor.cores
+a| [[spark.executor.cores]] Number of cores of an <<spark-Executor.adoc#, executor>>
+
+| spark.executor.extraJavaOptions
+a| [[spark.executor.extraJavaOptions]] Extra Java options of an <<spark-Executor.adoc#, executor>>
+
+Used when Spark on YARN's `ExecutorRunnable` is requested to xref:spark-on-yarn:spark-yarn-ExecutorRunnable.adoc#prepareCommand[prepare the command to launch CoarseGrainedExecutorBackend in a YARN container]
+
+| spark.executor.extraLibraryPath
+a| [[spark.executor.extraLibraryPath]] Extra library paths separated by system-dependent path separator, i.e. `:` on Unix/MacOS systems and `;` on Microsoft Windows
+
+Used when Spark on YARN's `ExecutorRunnable` is requested to xref:spark-on-yarn:spark-yarn-ExecutorRunnable.adoc#prepareCommand[prepare the command to launch CoarseGrainedExecutorBackend in a YARN container]
+
+| spark.executor.uri
+a| [[spark.executor.uri]] Equivalent to `SPARK_EXECUTOR_URI`
+
+| spark.executor.logs.rolling.time.interval
+a| [[spark.executor.logs.rolling.time.interval]]
+
+| spark.executor.logs.rolling.strategy
+a| [[spark.executor.logs.rolling.strategy]]
+
+| spark.executor.logs.rolling.maxRetainedFiles
+a| [[spark.executor.logs.rolling.maxRetainedFiles]]
+
+| spark.executor.logs.rolling.maxSize
+a| [[spark.executor.logs.rolling.maxSize]]
+
+| spark.executor.id
+a| [[spark.executor.id]]
+
+| spark.executor.heartbeatInterval
+a| [[spark.executor.heartbeatInterval]] Interval after which an <<spark-Executor.adoc#, executor>> reports heartbeat and metrics for active tasks to the driver
+
+Default: `10s`
+
+Refer to xref:spark-Executor.adoc#heartbeats-and-active-task-metrics[Sending heartbeats and partial metrics for active tasks]
+
+| spark.executor.heartbeat.maxFailures
+a| [[spark.executor.heartbeat.maxFailures]] Number of times an <<spark-Executor.adoc#, executor>> will try to send heartbeats to the driver before it gives up and exits (with exit code `56`).
+
+Default: `60`
+
+NOTE: Introduced in https://issues.apache.org/jira/browse/SPARK-13522[SPARK-13522 Executor should kill itself when it's unable to heartbeat to the driver more than N times].
+
+| spark.executor.instances
+a| [[spark.executor.instances]] Number of <<spark-Executor.adoc#, executors>> to use
+
+Default: `0`
+
+| spark.task.maxDirectResultSize
+a| [[spark.task.maxDirectResultSize]]
+
+Default: `1048576B`
+
+| spark.executor.userClassPathFirst
+a| [[spark.executor.userClassPathFirst]] Flag to control whether to load classes in user jars before those in Spark jars
+
+Default: `false`
+
+| spark.executor.memory
+a| [[spark.executor.memory]] Amount of memory to use for an <<spark-Executor.adoc#, executor>>
+
+Default: `1g`
+
+Equivalent to <<spark-SparkContext.adoc#environment-variables, SPARK_EXECUTOR_MEMORY>> environment variable.
+
+Refer to <<spark-Executor.adoc#memory, Executor Memory -- spark.executor.memory or SPARK_EXECUTOR_MEMORY settings>>
+
+| spark.executor.port
+a| [[spark.executor.port]]
+
+| spark.file.transferTo
+a| [[spark.file.transferTo]]
+
+Default: `true`
+
+| spark.launcher.port
+a| [[spark.launcher.port]]
+
+| spark.launcher.secret
+a| [[spark.launcher.secret]]
+
+| spark.locality.wait
+a| [[spark.locality.wait]] For locality-aware delay scheduling for `PROCESS_LOCAL`, `NODE_LOCAL`, and `RACK_LOCAL` <<spark-scheduler-TaskSchedulerImpl.adoc#TaskLocality, TaskLocalities>> when locality-specific setting is not set.
+
+Default: `3s`
+
+| spark.locality.wait.node
+a| [[spark.locality.wait.node]] Scheduling delay for `NODE_LOCAL` <<spark-scheduler-TaskSchedulerImpl.adoc#TaskLocality, TaskLocality>>
+
+Default: The value of <<spark.locality.wait, spark.locality.wait>>
+
+| spark.locality.wait.process
+a| [[spark.locality.wait.process]] Scheduling delay for `PROCESS_LOCAL` <<spark-scheduler-TaskSchedulerImpl.adoc#TaskLocality, TaskLocality>>
+
+Default: The value of <<spark.locality.wait, spark.locality.wait>>
+
+| spark.locality.wait.rack
+a| [[spark.locality.wait.rack]] Scheduling delay for `RACK_LOCAL` <<spark-scheduler-TaskSchedulerImpl.adoc#TaskLocality, TaskLocality>>
+
+Default: The value of <<spark.locality.wait, spark.locality.wait>>
+
+| spark.logging.exceptionPrintInterval
+a| [[spark.logging.exceptionPrintInterval]] How frequently to reprint duplicate exceptions in full (in millis).
+
+Default: `10000`
+
+| spark.master
+a| [[spark.master]] *Master URL* to connect a Spark application to
+
+| spark.scheduler.allocation.file
+a| [[spark.scheduler.allocation.file]] Path to the configuration file of <<spark-scheduler-FairSchedulableBuilder.adoc#, FairSchedulableBuilder>>
+
+Default: `fairscheduler.xml` (on a Spark application's class path)
+
+| spark.scheduler.executorTaskBlacklistTime
+a| [[spark.scheduler.executorTaskBlacklistTime]] How long to wait before a task can be re-launched on the executor where it once failed. It is to prevent repeated task failures due to executor failures.
+
+Default: `0L`
+
+| spark.scheduler.mode
+a| [[spark.scheduler.mode]][[SCHEDULER_MODE_PROPERTY]] *Scheduling Mode* of the <<spark-scheduler-TaskSchedulerImpl.adoc#, TaskSchedulerImpl>>, i.e. case-insensitive name of the xref:spark-scheduler-SchedulingMode.adoc[scheduling mode] that `TaskSchedulerImpl` uses to choose between the <<spark-scheduler-SchedulableBuilder.adoc#implementations, available SchedulableBuilders>> for task scheduling (of tasks of jobs submitted for execution to the same `SparkContext`)
+
+Default: `FIFO`
+
+Supported values:
+
+* *FAIR* for fair sharing (of cluster resources)
+* *FIFO* (default) for queueing jobs one after another
+
+*Task scheduling* is an algorithm that is used to assign cluster resources (CPU cores and memory) to tasks (that are part of jobs with one or more stages). Fair sharing allows for executing tasks of different jobs at the same time (that were all submitted to the same `SparkContext`). In FIFO scheduling mode a single `SparkContext` can submit a single job for execution only (regardless of how many cluster resources the job really use which could lead to a inefficient utilization of cluster resources and a longer execution of the Spark application overall).
+
+Scheduling mode is particularly useful in multi-tenant environments in which a single `SparkContext` could be shared across different users (to make a cluster resource utilization more efficient).
+
+TIP: Use web UI to know the current scheduling mode (e.g. <<spark-webui-environment.adoc#, Environment>> tab as part of *Spark Properties* and <<spark-webui-jobs.adoc#, Jobs>> tab as *Scheduling Mode*).
+
+| spark.shuffle.file.buffer
+a| [[spark.shuffle.file.buffer]] Size of the in-memory buffer for each shuffle file output stream, in KiB unless otherwise specified. These buffers reduce the number of disk seeks and system calls made in creating intermediate shuffle files.
+
+Default: `32k`
+
+Must be greater than `0` and less than or equal to `2097151` (`(Integer.MAX_VALUE - 15) / 1024`)
+
+| spark.shuffle.manager
+a| [[spark.shuffle.manager]] Specifies the fully-qualified class name or the <<spark.shuffle.manager-aliases, alias>> of the <<spark-shuffle-ShuffleManager.adoc#, ShuffleManager>> in a Spark application
+
+Default: `sort`
+
+[[spark.shuffle.manager-aliases]]
+The supported aliases:
+
+* [[spark.shuffle.manager-sort]] `sort`
+
+* [[spark.shuffle.manager-tungsten-sort]] `tungsten-sort`
+
+Used exclusively when `SparkEnv` object is requested to <<spark-SparkEnv.adoc#create, create a "base" SparkEnv for a driver or an executor>>
+
+| spark.shuffle.minNumPartitionsToHighlyCompress
+a| [[spark.shuffle.minNumPartitionsToHighlyCompress]] *(internal)* Minimum number of partitions (threshold) when `MapStatus` object creates a <<spark-scheduler-MapStatus.adoc#HighlyCompressedMapStatus, HighlyCompressedMapStatus>> (over <<spark-scheduler-MapStatus.adoc#CompressedMapStatus, CompressedMapStatus>>) when requested to <<spark-scheduler-MapStatus.adoc#apply, create one>> (for <<spark-shuffle-ShuffleWriter.adoc#implementations, ShuffleWriters>>).
+
+Default: `2000`
+
+Must be a positive integer (above `0`)
+
+| spark.shuffle.sort.initialBufferSize
+a| [[spark.shuffle.sort.initialBufferSize]] Initial buffer size for sorting
+
+Default: <<spark-shuffle-UnsafeShuffleWriter.adoc#DEFAULT_INITIAL_SORT_BUFFER_SIZE, 4096>>
+
+Used exclusively when `UnsafeShuffleWriter` is requested to <<spark-shuffle-UnsafeShuffleWriter.adoc#open, open>> (and creates a <<spark-shuffle-ShuffleExternalSorter.adoc#, ShuffleExternalSorter>>)
+
+| spark.shuffle.sync
+a| [[spark.shuffle.sync]] Controls whether link:spark-blockmanager-DiskBlockObjectWriter.adoc#commitAndGet[`DiskBlockObjectWriter` should force outstanding writes to disk when committing a single atomic block], i.e. all operating system buffers should synchronize with the disk to ensure that all changes to a file are in fact recorded in the storage.
+
+Default: `false`
+
+Used exclusively when `BlockManager` is requested to <<spark-BlockManager.adoc#getDiskWriter, get a DiskBlockObjectWriter>>
+
+| spark.shuffle.unsafe.file.output.buffer
+a| [[spark.shuffle.unsafe.file.output.buffer]] The file system for this buffer size after each partition is written in unsafe shuffle writer. In KiB unless otherwise specified.
+
+Default: `32k`
+
+Must be greater than `0` and less than or equal to `2097151` (`(Integer.MAX_VALUE - 15) / 1024`)
+
+| spark.starvation.timeout
+a| [[spark.starvation.timeout]] Threshold above which Spark warns a user that an initial TaskSet may be starved
+
+Default: `15s`
+
+| spark.storage.exceptionOnPinLeak
+a| [[spark.storage.exceptionOnPinLeak]]
+
+| spark.task.cpus
+a| [[spark.task.cpus]][[CPUS_PER_TASK]] The number of CPU cores used to schedule (_allocate for_) a task
+
+Default: `1`
+
+Used when:
+
+* `ExecutorAllocationManager` is <<spark-ExecutorAllocationManager.adoc#tasksPerExecutorForFullParallelism, created>>
+
+* `TaskSchedulerImpl` is <<spark-scheduler-TaskSchedulerImpl.adoc#CPUS_PER_TASK, created>>
+
+* `AppStatusListener` is requested to <<spark-SparkListener-AppStatusListener.adoc#onEnvironmentUpdate, handle an SparkListenerEnvironmentUpdate event>>
+
+* `LocalityPreferredContainerPlacementStrategy` is requested to `numExecutorsPending`
+
+| spark.task.maxFailures
+a| [[spark.task.maxFailures]] The number of individual task failures before giving up on the entire xref:spark-scheduler-TaskSet.adoc[TaskSet] and the job afterwards
+
+Default:
+
+* `1` in xref:spark-local:spark-local.adoc[local]
+* `maxFailures` in xref:spark-local:spark-local.adoc#masterURL[local-with-retries]
+* `4` in xref:spark-cluster.adoc[cluster mode]
+
+| spark.unsafe.exceptionOnMemoryLeak
+a| [[spark.unsafe.exceptionOnMemoryLeak]]
+
+|===

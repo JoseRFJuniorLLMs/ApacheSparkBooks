@@ -1,0 +1,87 @@
+== [[StateRestoreListener]] StateRestoreListener Contract
+
+`StateRestoreListener` is the <<contract, contract>> of <<implementations, objects>> that want to be notified about the store-related events, i.e. <<onBatchRestored, onBatchRestored>>, <<onRestoreEnd, onRestoreEnd>> and <<onRestoreStart, onRestoreStart>>.
+
+NOTE: A Kafka Streams developer uses <<kafka-streams-KafkaStreams.adoc#setGlobalStateRestoreListener, KafkaStreams.setGlobalStateRestoreListener>> method to register a `StateRestoreListener` in a Kafka Streams application.
+
+[[contract]]
+.StateRestoreListener Contract
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| onBatchRestored
+a| [[onBatchRestored]]
+
+[source, java]
+----
+void onBatchRestored(
+  TopicPartition topicPartition,
+  String storeName,
+  long batchEndOffset,
+  long numRestored)
+----
+
+Used when:
+
+* `GlobalStateManagerImpl` is requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#restoreState, restoreState>> (when requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#register, register a state store>>)
+
+* `StateRestorer` is requested to <<kafka-streams-internals-StateRestorer.adoc#restoreBatchCompleted, restoreBatchCompleted>>
+
+| onRestoreEnd
+a| [[onRestoreEnd]]
+
+[source, java]
+----
+void onRestoreEnd(
+  TopicPartition topicPartition,
+  String storeName,
+  long totalRestored)
+----
+
+Used when:
+
+* `GlobalStateManagerImpl` is requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#restoreState, restoreState>> (when requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#register, register a state store>>)
+
+* `StateRestorer` is requested to <<kafka-streams-internals-StateRestorer.adoc#restoreDone, restoreDone>>
+
+| onRestoreStart
+a| [[onRestoreStart]]
+
+[source, java]
+----
+void onRestoreStart(
+  TopicPartition topicPartition,
+  String storeName,
+  long startingOffset,
+  long endingOffset)
+----
+
+Used when:
+
+* `GlobalStateManagerImpl` is requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#restoreState, restoreState>> (when requested to <<kafka-streams-internals-GlobalStateManagerImpl.adoc#register, register a state store>>)
+
+* `StateRestorer` is requested to <<kafka-streams-internals-StateRestorer.adoc#restoreStarted, restoreStarted>>
+
+|===
+
+[[implementations]]
+.StateRestoreListeners (Direct Implementations)
+[cols="1,2",options="header",width="100%"]
+|===
+| StateRestoreListener
+| Description
+
+| <<kafka-streams-AbstractNotifyingBatchingRestoreCallback.adoc#, AbstractNotifyingBatchingRestoreCallback>>
+| [[AbstractNotifyingBatchingRestoreCallback]]
+
+| <<kafka-streams-AbstractNotifyingRestoreCallback.adoc#, AbstractNotifyingRestoreCallback>>
+| [[AbstractNotifyingRestoreCallback]]
+
+| <<kafka-streams-internals-CompositeRestoreListener.adoc#, CompositeRestoreListener>>
+| [[CompositeRestoreListener]]
+
+| <<kafka-streams-DelegatingStateRestoreListener.adoc#, DelegatingStateRestoreListener>>
+| [[DelegatingStateRestoreListener]]
+|===

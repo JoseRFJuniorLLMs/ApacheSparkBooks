@@ -1,0 +1,20 @@
+== [[StreamSinkProvider]] StreamSinkProvider
+
+`StreamSinkProvider` is the <<contract, contract>> for creating link:spark-sql-streaming-Sink.adoc[streaming sinks] for a specific format or system.
+
+`StreamSinkProvider` defines the one and only <<createSink, createSink>> method that creates a link:spark-sql-streaming-Sink.adoc[streaming sink].
+
+[[createSink]]
+[[contract]]
+[source, scala]
+----
+package org.apache.spark.sql.sources
+
+trait StreamSinkProvider {
+  def createSink(
+      sqlContext: SQLContext,
+      parameters: Map[String, String],
+      partitionColumns: Seq[String],
+      outputMode: OutputMode): Sink
+}
+----

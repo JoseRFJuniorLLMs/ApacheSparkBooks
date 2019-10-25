@@ -1,0 +1,68 @@
+== [[TimestampExtractor]] TimestampExtractor Contract
+
+`TimestampExtractor` is a <<contract, contract>> of <<implementations, timestamp extractors>> that <<extract, extract a timestamp from a record>> for *event time* (aka _stream time_) semantics.
+
+[[contract]]
+[source, java]
+----
+package org.apache.kafka.streams.processor;
+
+interface TimestampExtractor {
+  long extract(ConsumerRecord<Object, Object> record, long previousTimestamp);
+}
+----
+
+The extracted timestamp is in milliseconds and can never be negative (or <<kafka-streams-internals-RecordQueue.adoc#addRawRecords, will be dropped>>).
+
+You can define a custom timestamp extractor for reading a topic as a <<kafka-streams-StreamsBuilder.adoc#stream, KStream>> or a <<kafka-streams-StreamsBuilder.adoc#table, KTable>> in an <<kafka-streams-Consumed.adoc#, Consumed>> object (using <<kafka-streams-Consumed.adoc#with, with>> or <<kafka-streams-Consumed.adoc#withTimestampExtractor, withTimestampExtractor>>).
+
+[source, scala]
+----
+val timestampExtractor = new TimestampExtractor {
+  def extract(record: ConsumerRecord[Object, Object], previousTimestamp: Long) = ???
+}
+val consumed = Consumed.`with`(timestampExtractor)
+
+val builder = new StreamsBuilder
+builder.stream(topic = "t1", consumed)
+builder.table(topic = "t1", consumed)
+----
+
+When not defined using a <<kafka-streams-Consumed.adoc#, Consumed>>, Kafka Streams uses the default extractor as configured using <<kafka-streams-StreamsConfig.adoc#default.timestamp.extractor, default.timestamp.extractor>> configuration property.
+
+[source, scala]
+----
+val props = new java.util.Properties
+import org.apache.kafka.streams.StreamsConfig
+props.setProperty(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, ...)
+----
+
+`TimestampExtractor` can be used to schedule a periodic operation for processors (using <<kafka-streams-ProcessorContext.adoc#schedule, ProcessorContext.schedule>> with `PunctuationType.STREAM_TIME`).
+
+.TimestampExtractor Contract
+[cols="1,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| `extract`
+| [[extract]] Used exclusively when `RecordQueue` is requested to link:kafka-streams-internals-RecordQueue.adoc#addRawRecords[add Kafka ConsumerRecords (as StampedRecords)].
+|===
+
+[[implementations]]
+.TimestampExtractors
+[cols="1,2",options="header",width="100%"]
+|===
+| TimestampExtractor
+| Description
+
+| link:kafka-streams-WallclockTimestampExtractor.adoc[WallclockTimestampExtractor]
+| [[WallclockTimestampExtractor]]
+
+| link:kafka-streams-ExtractRecordMetadataTimestamp.adoc[ExtractRecordMetadataTimestamp]
+| [[ExtractRecordMetadataTimestamp]]
+|===
+
+NOTE: `TimestampExtractor` is an `Evolving` contract which means that compatibility may be broken at a minor release.
+
+`TimestampExtractor` is used to create a <<kafka-streams-internals-InternalTopologyBuilder-SourceNodeFactory.adoc#, SourceNodeFactory>>, <<kafka-streams-internals-RecordQueue.adoc#, RecordQueue>>, <<kafka-streams-internals-InternalTopologyBuilder-SourceNodeFactory.adoc#, SourceNodeFactory>>.

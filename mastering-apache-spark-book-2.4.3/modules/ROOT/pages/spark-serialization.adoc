@@ -1,0 +1,9 @@
+== Serialization
+
+Serialization systems:
+
+* Java serialization
+* Kryo
+* Avro
+* Thrift
+* Protobuf

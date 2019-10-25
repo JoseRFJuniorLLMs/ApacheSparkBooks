@@ -1,0 +1,56 @@
+== [[GlobalStreamThread]] GlobalStreamThread
+
+`GlobalStreamThread` is...FIXME
+
+`GlobalStreamThread` is <<creating-instance, created>> exclusively when `KafkaStreams` is <<kafka-streams-KafkaStreams.adoc#globalStreamThread, created>>.
+
+[[internal-registries]]
+.GlobalStreamThread's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="1m,2",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| cache
+| [[cache]] <<kafka-streams-internals-ThreadCache.adoc#, ThreadCache>>
+|===
+
+=== [[initialize]] `initialize` Internal Method
+
+[source, java]
+----
+StateConsumer initialize()
+----
+
+`initialize`...FIXME
+
+NOTE: `initialize` is used exclusively when `GlobalStreamThread` is <<run, started>>.
+
+=== [[run]] Starting Thread -- `run` Method
+
+[source, java]
+----
+void run()
+----
+
+NOTE: `run` is part of Java's https://docs.oracle.com/javase/9/docs/api/java/lang/Thread.html#run--[Thread Contract] to be executed by a JVM thread.
+
+`run`...FIXME
+
+NOTE: `run` is used exclusively when `KafkaStreams` is <<kafka-streams-KafkaStreams.adoc#start, started>>.
+
+=== [[creating-instance]] Creating GlobalStreamThread Instance
+
+`GlobalStreamThread` takes the following when created:
+
+* [[topology]] <<kafka-streams-internals-ProcessorTopology.adoc#, ProcessorTopology>>
+* [[config]] link:kafka-streams-StreamsConfig.adoc[StreamsConfig]
+* [[globalConsumer]] Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html[Consumer] (`Consumer<byte[], byte[]>`)
+* [[stateDirectory]] link:kafka-streams-internals-StateDirectory.adoc[StateDirectory]
+* [[cacheSizeBytes]] `cacheSizeBytes`
+* [[metrics]] `Metrics`
+* [[time]] `Time`
+* [[threadClientId]] `threadClientId`
+* [[stateRestoreListener]] <<kafka-streams-StateRestoreListener.adoc#, StateRestoreListener>>
+
+`GlobalStreamThread` initializes the <<internal-registries, internal registries and counters>>.

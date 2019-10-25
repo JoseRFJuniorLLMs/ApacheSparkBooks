@@ -1,0 +1,23 @@
+== [[RecordDeserializer]] RecordDeserializer
+
+[[creating-instance]]
+`RecordDeserializer` is the metadata of a <<sourceNode, SourceNode>> that knows how to <<deserialize, deserialize a raw ConsumerRecord>>.
+
+`RecordDeserializer` takes the following when created:
+
+* [[sourceNode]] link:kafka-streams-internals-SourceNode.adoc[SourceNode]
+* [[deserializationExceptionHandler]] `DeserializationExceptionHandler`
+* [[logContext]] `LogContext`
+
+=== [[deserialize]] Deserializing Kafka ConsumerRecord (in ProcessorContext) -- `deserialize` Method
+
+[source, java]
+----
+ConsumerRecord<Object, Object> deserialize(
+  final ProcessorContext processorContext,
+  final ConsumerRecord<byte[], byte[]> rawRecord)
+----
+
+`deserialize`...FIXME
+
+NOTE: `deserialize` is used when...FIXME

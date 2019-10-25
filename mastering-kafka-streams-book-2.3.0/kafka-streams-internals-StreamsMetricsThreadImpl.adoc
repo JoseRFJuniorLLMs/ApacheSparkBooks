@@ -1,0 +1,69 @@
+== [[StreamsMetricsThreadImpl]] StreamsMetricsThreadImpl
+
+`StreamsMetricsThreadImpl` is a concrete <<kafka-streams-internals-StreamsMetricsImpl.adoc#, StreamsMetricsImpl>>.
+
+`StreamsMetricsThreadImpl` is <<creating-instance, created>> for a link:kafka-streams-internals-StreamThread.adoc#create[StreamThread] (when `KafkaStreams` is link:kafka-streams-KafkaStreams.adoc#creating-instance[created]).
+
+[[internal-registries]]
+[[sensors]]
+.StreamsMetricsThreadImpl's Sensors
+[cols="1m,2",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| commitTimeSensor
+| [[commitTimeSensor]]
+
+| pollTimeSensor
+| [[pollTimeSensor]]
+
+| processTimeSensor
+| [[processTimeSensor]]
+
+| punctuateTimeSensor
+| [[punctuateTimeSensor]]
+
+| taskCreatedSensor
+| [[taskCreatedSensor]]
+
+| tasksClosedSensor
+| [[tasksClosedSensor]]
+
+| skippedRecordsSensor
+| [[skippedRecordsSensor]]
+
+|===
+
+=== [[creating-instance]] Creating StreamsMetricsThreadImpl Instance
+
+`StreamsMetricsThreadImpl` takes the following when created:
+
+* [[metrics]] `Metrics`
+* [[groupName]] `groupName`
+* [[prefix]] `prefix`
+* [[tags]] Tags (as `Map<String, String>`)
+
+`StreamsMetricsThreadImpl` initializes the <<sensors, sensors>>.
+
+=== [[createMeter]] `createMeter` Internal Method
+
+[source, java]
+----
+Meter createMeter(Metrics metrics, SampledStat stat, String baseName, String descriptiveName)
+----
+
+`createMeter`...FIXME
+
+NOTE: `createMeter` is used when...FIXME
+
+=== [[removeAllSensors]] `removeAllSensors` Method
+
+[source, java]
+----
+void removeAllSensors()
+----
+
+`removeAllSensors`...FIXME
+
+NOTE: `removeAllSensors` is used when...FIXME

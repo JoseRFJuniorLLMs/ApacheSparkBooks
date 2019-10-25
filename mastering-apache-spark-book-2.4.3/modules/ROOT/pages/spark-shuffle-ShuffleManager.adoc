@@ -1,0 +1,127 @@
+== [[ShuffleManager]] ShuffleManager Contract -- Pluggable Shuffle Systems
+
+`ShuffleManager` is the <<contract, contract>> of <<implementations, shuffle systems>> that manage shuffle metadata on the driver (using shuffle IDs or <<spark-shuffle-ShuffleHandle.adoc#, ShuffleHandle>>) and allow running tasks on executors to access the metadata.
+
+[[implementations]]
+[NOTE]
+====
+<<spark-shuffle-SortShuffleManager.adoc#, SortShuffleManager>> (short name: `sort` or `tungsten-sort`) is the default implementation of the <<contract, ShuffleManager Contract>> in Apache Spark.
+
+Use <<spark-configuration-properties.adoc#spark.shuffle.manager, spark.shuffle.manager>> configuration property to set up a custom `ShuffleManager`.
+====
+
+[[contract]]
+.ShuffleManager Contract
+[cols="1m,3",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| getReader
+a| [[getReader]]
+
+[source, scala]
+----
+getReader[K, C](
+  handle: ShuffleHandle,
+  startPartition: Int,
+  endPartition: Int,
+  context: TaskContext): ShuffleReader[K, C]
+----
+
+Gives <<spark-shuffle-ShuffleReader.adoc#, ShuffleReader>> to read shuffle data in the <<spark-shuffle-ShuffleHandle.adoc#, ShuffleHandle>>
+
+Used when the following RDDs are requested to <<spark-rdd-RDD.adoc#compute, compute a partition>>:
+
+* <<spark-rdd-CoGroupedRDD.adoc#, CoGroupedRDD>>
+
+* <<spark-rdd-ShuffledRDD.adoc#, ShuffledRDD>>
+
+* <<spark-rdd-SubtractedRDD.adoc#, SubtractedRDD>>
+
+* `ShuffledRowRDD` (Spark SQL)
+
+| getWriter
+a| [[getWriter]]
+
+[source, scala]
+----
+getWriter[K, V](
+  handle: ShuffleHandle,
+  mapId: Int,
+  context: TaskContext): ShuffleWriter[K, V]
+----
+
+Gives <<spark-shuffle-ShuffleWriter.adoc#, ShuffleWriter>> to write shuffle data in the <<spark-shuffle-ShuffleHandle.adoc#, ShuffleHandle>>
+
+Used exclusively when `ShuffleMapTask` is requested to <<spark-scheduler-ShuffleMapTask.adoc#runTask, run>> (and requests the <<spark-shuffle-ShuffleWriter.adoc#, ShuffleWriter>> to write records for a partition)
+
+| registerShuffle
+a| [[registerShuffle]]
+
+[source, scala]
+----
+registerShuffle[K, V, C](
+  shuffleId: Int,
+  numMaps: Int,
+  dependency: ShuffleDependency[K, V, C]): ShuffleHandle
+----
+
+Registers a shuffle (by the given `shuffleId` and <<spark-rdd-ShuffleDependency.adoc#, ShuffleDependency>>) and returns a <<spark-shuffle-ShuffleHandle.adoc#, ShuffleHandle>>
+
+Used exclusively when `ShuffleDependency` is <<spark-rdd-ShuffleDependency.adoc#shuffleHandle, created>> (and registers itself with the shuffle system)
+
+| shuffleBlockResolver
+a| [[shuffleBlockResolver]]
+
+[source, scala]
+----
+shuffleBlockResolver: ShuffleBlockResolver
+----
+
+Gives <<spark-shuffle-ShuffleBlockResolver.adoc#, ShuffleBlockResolver>> of the shuffle system
+
+Used when:
+
+* `SortShuffleManager` is requested for a <<spark-shuffle-SortShuffleManager.adoc#getWriter, ShuffleWriter for a ShuffleHandle>>, to <<spark-shuffle-SortShuffleManager.adoc#unregisterShuffle, unregister a shuffle>> and <<spark-shuffle-SortShuffleManager.adoc#stop, stop>>
+
+* `BlockManager` is requested to <<spark-BlockManager.adoc#getBlockData, get shuffle data>> and <<spark-BlockManager.adoc#getLocalBytes, getLocalBytes>>
+
+| stop
+a| [[stop]]
+
+[source, scala]
+----
+stop(): Unit
+----
+
+Stops the shuffle system
+
+Used exclusively when `SparkEnv` is requested to <<spark-SparkEnv.adoc#stop, stop>>
+
+| unregisterShuffle
+a| [[unregisterShuffle]]
+
+[source, scala]
+----
+unregisterShuffle(shuffleId: Int): Boolean
+----
+
+Unregisters a shuffle (given `shuffleId`)
+
+Used exclusively when `BlockManagerSlaveEndpoint` is requested to <<spark-blockmanager-BlockManagerSlaveEndpoint.adoc#RemoveShuffle, receives a RemoveShuffle message>>
+
+|===
+
+=== [[SparkEnv]] Accessing ShuffleManager using SparkEnv
+
+The driver and executor access the `ShuffleManager` instance using link:spark-SparkEnv.adoc#shuffleManager[SparkEnv.shuffleManager].
+
+[source, scala]
+----
+val shuffleManager = SparkEnv.get.shuffleManager
+----
+
+=== [[i-want-more]] Further Reading or Watching
+
+. (slides) http://www.slideshare.net/colorant/spark-shuffle-introduction[Spark shuffle introduction] by http://blog.csdn.net/colorant/[Raymond Liu] (aka _colorant_).

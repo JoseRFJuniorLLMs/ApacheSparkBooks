@@ -1,0 +1,74 @@
+== [[Windows]] Windows -- Window Specification For Time-Windowed Streaming Aggregations
+
+`Windows` is the <<contract, abstraction>> of <<extensions, window specifications>> that describe <<kafka-streams-Window.adoc#, windows>> of fixed <<size, size>> and <<gracePeriodMs, grace period>>.
+
+`Windows` are used in <<kafka-streams-KGroupedStream.adoc#windowedBy-TimeWindowedKStream, KGroupedStream.windowedBy>> streaming operator (for <<kafka-streams-TimeWindowedKStream.adoc#, time-windowed streaming aggregations>>).
+
+[[contract]]
+.Windows API / Operators
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| gracePeriodMs
+a| [[gracePeriodMs]]
+
+[source, java]
+----
+long gracePeriodMs()
+----
+
+*Grace period* (in milliseconds)
+
+New events are added to windows until their grace period ends
+
+| size
+a| [[size]]
+
+[source, java]
+----
+long size()
+----
+
+*Window size* (in milliseconds)
+
+| windowsFor
+a| [[windowsFor]]
+
+[source, java]
+----
+Map<Long, W> windowsFor(final long timestamp)
+----
+
+Returns all the windows that contain the given timestamp, indexed by non-negative window start timestamps.
+
+Used when `KStreamWindowAggregateProcessor` is requested to <<kafka-streams-internals-KStreamWindowAggregateProcessor.adoc#process, process a record>>
+|===
+
+[[extensions]]
+.Windows
+[cols="1,2",options="header",width="100%"]
+|===
+| Windows
+| Description
+
+| <<kafka-streams-JoinWindows.adoc#, JoinWindows>>
+| [[JoinWindows]]
+
+| <<kafka-streams-TimeWindows.adoc#, TimeWindows>>
+| [[TimeWindows]] Time-bound window specification for *tumbling* or *hopping* windows
+
+| <<kafka-streams-UnlimitedWindows.adoc#, UnlimitedWindows>>
+| [[UnlimitedWindows]]
+|===
+
+[[creating-instance]]
+`Windows` takes no arguments when created and simply initializes the <<internal-registries, internal registries and counters>>.
+
+NOTE: `Windows` is a Java abstract class and cannot be <<creating-instance, created>> directly. It is created indirectly when the <<extensions, concrete Windows>> are.
+
+[[maintainMs]]
+[[DEFAULT_MAINTAIN_DURATION_MS]]
+[[window-maintain-duration]]
+`Windows` defines a *window maintain duration* (aka *retention time*). The default window maintain duration is `1 day`.

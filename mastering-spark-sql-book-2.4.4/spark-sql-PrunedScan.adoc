@@ -1,0 +1,3 @@
+== [[PrunedScan]] PrunedScan Contract
+
+`PrunedScan` is...FIXME

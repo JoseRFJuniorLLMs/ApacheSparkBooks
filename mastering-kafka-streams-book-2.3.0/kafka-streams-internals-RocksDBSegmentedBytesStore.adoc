@@ -1,0 +1,19 @@
+== [[RocksDBSegmentedBytesStore]] RocksDBSegmentedBytesStore
+
+`RocksDBSegmentedBytesStore` is a concrete <<kafka-streams-StateStore.adoc#, StateStore>> (as a <<kafka-streams-internals-AbstractRocksDBSegmentedBytesStore.adoc#, AbstractRocksDBSegmentedBytesStore>> of `KeyValueSegments`) that...FIXME
+
+`RocksDBSegmentedBytesStore` is <<creating-instance, created>> when:
+
+* `RocksDbSessionBytesStoreSupplier` is requested for a <<kafka-streams-internals-RocksDbSessionBytesStoreSupplier.adoc#get, SessionStore>>
+
+* `RocksDbWindowBytesStoreSupplier` is requested for a <<kafka-streams-internals-RocksDbWindowBytesStoreSupplier.adoc#get, WindowStore>>
+
+=== [[creating-instance]] Creating RocksDBSegmentedBytesStore Instance
+
+`RocksDBSegmentedBytesStore` takes the following to be created:
+
+* [[name]] Name
+* [[metricScope]] Metric scope
+* [[retention]] `retention`
+* [[segmentInterval]] `segmentInterval`
+* [[keySchema]] `KeySchema`

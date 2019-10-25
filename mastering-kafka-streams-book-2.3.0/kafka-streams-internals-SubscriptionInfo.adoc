@@ -1,0 +1,98 @@
+== [[SubscriptionInfo]] SubscriptionInfo
+
+`SubscriptionInfo` is...FIXME
+
+[[LATEST_SUPPORTED_VERSION]]
+`SubscriptionInfo` uses `4`  for the *latest supported subscription version*.
+
+=== [[decode]] `decode` Method
+
+[source, java]
+----
+SubscriptionInfo decode(final ByteBuffer data)
+----
+
+`decode`...FIXME
+
+NOTE: `decode` is used when...FIXME
+
+=== [[encodeTasks]] `encodeTasks` Method
+
+[source, java]
+----
+void encodeTasks(
+  final ByteBuffer buf,
+  final Collection<TaskId> taskIds)
+----
+
+`encodeTasks`...FIXME
+
+NOTE: `encodeTasks` is used when `SubscriptionInfo` is requested to <<encodeVersionOne, encodeVersionOne>>, <<encodeVersionTwo, encodeVersionTwo>>, <<encodeVersionThree, encodeVersionThree>>, and <<encodeVersionFour, encodeVersionFour>>.
+
+=== [[decodeTasks]] `decodeTasks` Factory Method
+
+[source, java]
+----
+static void decodeTasks(
+  final SubscriptionInfo subscriptionInfo,
+  final ByteBuffer data)
+----
+
+`decodeTasks`...FIXME
+
+NOTE: `decodeTasks` is used when...FIXME
+
+=== [[encodeVersionFour]] `encodeVersionFour` Internal Method
+
+[source, java]
+----
+ByteBuffer encodeVersionFour()
+----
+
+`encodeVersionFour`...FIXME
+
+NOTE: `encodeVersionFour` is used exclusively when `SubscriptionInfo` is requested to <<encode, encode>> (for the <<usedVersion, metadata version>> as `4`).
+
+=== [[encodeVersionThree]] `encodeVersionThree` Internal Method
+
+[source, java]
+----
+ByteBuffer encodeVersionThree()
+----
+
+`encodeVersionThree`...FIXME
+
+NOTE: `encodeVersionThree` is used when...FIXME
+
+=== [[encodeVersionTwo]] `encodeVersionTwo` Internal Method
+
+[source, java]
+----
+ByteBuffer encodeVersionTwo()
+----
+
+`encodeVersionTwo`...FIXME
+
+NOTE: `encodeVersionTwo` is used when...FIXME
+
+=== [[encodeVersionOne]] `encodeVersionOne` Internal Method
+
+[source, java]
+----
+ByteBuffer encodeVersionOne()
+----
+
+`encodeVersionOne`...FIXME
+
+NOTE: `encodeVersionOne` is used when...FIXME
+
+=== [[encode]] `encode` Method
+
+[source, java]
+----
+ByteBuffer encode()
+----
+
+`encode`...FIXME
+
+NOTE: `encode` is used exclusively when `StreamsPartitionAssignor` is requested to <<kafka-streams-internals-StreamsPartitionAssignor.adoc#subscription, subscription>>.

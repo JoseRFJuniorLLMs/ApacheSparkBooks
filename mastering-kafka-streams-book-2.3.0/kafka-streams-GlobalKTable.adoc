@@ -1,0 +1,27 @@
+== [[GlobalKTable]] GlobalKTable -- Global Changelog Stream
+
+`GlobalKTable` is the <<contract, abstraction>> of <<implementations, changelog streams>> that are global and have a local state store registered under the optional <<queryableStoreName, queryableStoreName>>.
+
+[[contract]]
+.GlobalKTable Contract
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| queryableStoreName
+a| [[queryableStoreName]]
+
+[source, java]
+----
+String queryableStoreName()
+----
+
+Name of the local state store that can be used in interactive queries. If `null`, the local state store of the `GlobalKTable` cannot be queried (and so the `GlobalKTable` is not queryable).
+
+|===
+
+NOTE: `GlobalKTable` is an `Evolving` contract which means that compatibility may be broken at a minor release.
+
+[[implementations]]
+NOTE: <<kafka-streams-internals-GlobalKTableImpl.adoc#, GlobalKTableImpl>> is the one and only known implementation of <<contract, GlobalKTable Contract>> in Kafka Streams.

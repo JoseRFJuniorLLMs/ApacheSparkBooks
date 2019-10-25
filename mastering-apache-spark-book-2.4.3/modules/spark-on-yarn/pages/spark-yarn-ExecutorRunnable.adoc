@@ -1,0 +1,256 @@
+== ExecutorRunnable
+
+`ExecutorRunnable` <<run, starts a YARN container>> with link:../spark-CoarseGrainedExecutorBackend.adoc#main[CoarseGrainedExecutorBackend] standalone application.
+
+<<creating-instance, `ExecutorRunnable` is created>> when link:spark-yarn-YarnAllocator.adoc#runAllocatedContainers[`YarnAllocator` launches Spark executors in allocated YARN containers] (and for debugging purposes when link:spark-yarn-applicationmaster.adoc#registerAM[`ApplicationMaster` requests cluster resources for executors]).
+
+.ExecutorRunnable and YarnAllocator in YARN Resource Container
+image::spark-yarn-ExecutorRunnable.png[align="center"]
+
+If link:../spark-ExternalShuffleService.adoc#spark.shuffle.service.enabled[external shuffle service is used], it is <<startContainer, set in the `ContainerLaunchContext` context as a service under the name of `spark_shuffle`>>.
+
+[[internal-properties]]
+.ExecutorRunnable's Internal Properties
+[cols="1,2",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| [[rpc]] `rpc`
+| https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-common/apidocs/org/apache/hadoop/yarn/ipc/YarnRPC.html[YarnRPC] for...FIXME
+
+| [[nmClient]] `nmClient`
+| https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/client/api/NMClient.html[NMClient] for...FIXME
+|===
+
+NOTE: Despite the name `ExecutorRunnable` is not a http://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html[java.lang.Runnable] anymore after https://issues.apache.org/jira/browse/SPARK-12447[SPARK-12447].
+
+[TIP]
+====
+Enable `INFO` or `DEBUG` logging level for `org.apache.spark.deploy.yarn.ExecutorRunnable` logger to see what happens inside.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.deploy.yarn.ExecutorRunnable=DEBUG
+```
+
+Refer to link:../spark-logging.adoc[Logging].
+====
+
+=== [[creating-instance]] Creating ExecutorRunnable Instance
+
+`ExecutorRunnable` takes the following when created:
+
+. YARN https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/api/records/Container.html[Container] to <<run, run a Spark executor in>>
+. [[conf]] https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/conf/YarnConfiguration.html[YarnConfiguration]
+. [[sparkConf]] `sparkConf` -- link:../spark-SparkConf.adoc[SparkConf]
+. `masterAddress`
+. `executorId`
+. `hostname` of the YARN container
+. [[executorMemory]] `executorMemory`
+. [[executorCores]] `executorCores`
+. `appId`
+. [[securityMgr]] `SecurityManager`
+. [[localResources]] `localResources` -- `Map[String, LocalResource]`
+
+`ExecutorRunnable` initializes the <<internal-registries, internal registries and counters>>.
+
+NOTE: <<executorMemory, executorMemory>> and <<executorCores, executorCores>> input arguments are from link:spark-yarn-YarnAllocator.adoc#runAllocatedContainers[YarnAllocator] but really are link:../spark-Executor.adoc#spark.executor.memory[spark.executor.memory] and link:../spark-Executor.adoc#spark.executor.cores[spark.executor.cores] properties.
+
+NOTE: Most of the input parameters are exactly as link:spark-yarn-YarnAllocator.adoc#creating-instance[`YarnAllocator` was created with].
+
+=== [[prepareCommand]] Building Command to Run CoarseGrainedExecutorBackend in YARN Container -- `prepareCommand` Internal Method
+
+[source, scala]
+----
+prepareCommand(
+  masterAddress: String,
+  slaveId: String,
+  hostname: String,
+  executorMemory: Int,
+  executorCores: Int,
+  appId: String): List[String]
+----
+
+`prepareCommand` prepares the command that is used to <<startContainer, start `org.apache.spark.executor.CoarseGrainedExecutorBackend` application in a YARN container>>. All the input parameters of `prepareCommand` become the link:../spark-CoarseGrainedExecutorBackend.adoc#main[command-line arguments of `CoarseGrainedExecutorBackend` application].
+
+`prepareCommand` builds the command that will be executed in a YARN container.
+
+NOTE: JVM options are defined using `-Dkey=value` format.
+
+`prepareCommand` builds `-Xmx` JVM option using <<executorMemory, executorMemory>> (in MB).
+
+NOTE: `prepareCommand` uses <<executorMemory, executorMemory>> that is given when <<creating-instance, `ExecutorRunnable` is created>>.
+
+`prepareCommand` adds the optional link:../spark-Executor.adoc#spark.executor.extraJavaOptions[spark.executor.extraJavaOptions] property to the JVM options (if defined).
+
+`prepareCommand` adds the optional `SPARK_JAVA_OPTS` environment variable to the JVM options (if defined).
+
+`prepareCommand` adds the optional link:../spark-Executor.adoc#spark.executor.extraLibraryPath[spark.executor.extraLibraryPath] to the library path (link:spark-yarn-client.adoc#getClusterPath[changing the path to be YARN NodeManager-aware]).
+
+`prepareCommand` adds `-Djava.io.tmpdir=<LOG_DIR>./tmp` to the JVM options.
+
+`prepareCommand` adds link:../spark-SparkConf.adoc#isExecutorStartupConf[all the Spark properties for executors] to the JVM options.
+
+NOTE: `prepareCommand` uses <<sparkConf, SparkConf>> that is given when <<creating-instance, `ExecutorRunnable` is created>>.
+
+`prepareCommand` adds `-Dspark.yarn.app.container.log.dir=<LOG_DIR>` to the JVM options.
+
+`prepareCommand` adds `-XX:MaxPermSize=256m` unless already defined or IBM JVM or Java 8 are used.
+
+`prepareCommand` reads the link:spark-yarn-client.adoc#getUserClasspath[list of URIs representing the user classpath] and adds `--user-class-path` and `file:[path]` for every entry.
+
+`prepareCommand` adds `-XX:OnOutOfMemoryError` to the JVM options unless already defined.
+
+In the end, `prepareCommand` combines the parts together to build the entire command with the following (in order):
+
+. Extra library path
+. `JAVA_HOME/bin/java`
+. `-server`
+. JVM options
+. `org.apache.spark.executor.CoarseGrainedExecutorBackend`
+. `--driver-url` followed by `masterAddress`
+. `--executor-id` followed by `executorId`
+. `--hostname` followed by `hostname`
+. `--cores` followed by `executorCores`
+. `--app-id` followed by `appId`
+. `--user-class-path` with the arguments
+. `1><LOG_DIR>/stdout`
+. `2><LOG_DIR>/stderr`
+
+NOTE: `prepareCommand` uses the arguments for `--driver-url`, `--executor-id`, `--hostname`, `--cores` and `--app-id` as given when <<creating-instance, `ExecutorRunnable` is created>>.
+
+NOTE: You can see the result of `prepareCommand` as `command` in the INFO message in the logs when link:spark-yarn-applicationmaster.adoc#registerAM[`ApplicationMaster` registers itself with YARN ResourceManager] (to print it out once and avoid flooding the logs when starting Spark executors).
+
+NOTE: `prepareCommand` is used when `ExecutorRunnable` <<startContainer, starts `CoarseGrainedExecutorBackend` in a YARN resource container>> and (only for debugging purposes) when `ExecutorRunnable` <<launchContextDebugInfo, builds launch context diagnostic information>> (to print it out as an INFO message to the logs).
+
+=== [[prepareEnvironment]] Collecting Environment Variables for CoarseGrainedExecutorBackend Containers -- `prepareEnvironment` Internal Method
+
+[source, scala]
+----
+prepareEnvironment(): HashMap[String, String]
+----
+
+`prepareEnvironment` collects environment-related entries.
+
+`prepareEnvironment` link:spark-yarn-client.adoc#populateClasspath[populates class path] (passing in <<conf, YarnConfiguration>>, <<sparkConf, SparkConf>>, and link:../spark-configuration-properties.adoc#spark.executor.extraClassPath[spark.executor.extraClassPath] property)
+
+CAUTION: FIXME How does populateClasspath use the input `env`?
+
+`prepareEnvironment` collects the executor environment variables set on the current <<sparkConf, SparkConf>>, i.e. the Spark properties with the prefix `spark.executorEnv.`, and link:spark-yarn-YarnSparkHadoopUtil.adoc#addPathToEnvironment[YarnSparkHadoopUtil.addPathToEnvironment(env, key, value)].
+
+NOTE: `SPARK_YARN_USER_ENV` is deprecated.
+
+`prepareEnvironment` reads YARN's https://hadoop.apache.org/docs/current/api/constant-values.html#org.apache.hadoop.yarn.conf.YarnConfiguration.YARN_HTTP_POLICY_KEY[yarn.http.policy] property (with https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/conf/YarnConfiguration.html#YARN_HTTP_POLICY_DEFAULT[YarnConfiguration.YARN_HTTP_POLICY_DEFAULT]) to choose a secure HTTPS scheme for container logs when `HTTPS_ONLY`.
+
+With the input `container` defined and `SPARK_USER` environment variable available, `prepareEnvironment` registers `SPARK_LOG_URL_STDERR` and `SPARK_LOG_URL_STDOUT` environment entries with `stderr?start=-4096` and `stdout?start=-4096` added to `[httpScheme][address]/node/containerlogs/[containerId]/[user]`, respectively.
+
+In the end, `prepareEnvironment` collects all the System environment variables with `SPARK` prefix.
+
+NOTE: `prepareEnvironment` is used when `ExecutorRunnable` <<startContainer, starts `CoarseGrainedExecutorBackend` in a container>> and (for debugging purposes) <<launchContextDebugInfo, builds launch context diagnostic information>> (to print it out as an INFO message to the logs).
+
+=== [[run]] Starting ExecutorRunnable (with CoarseGrainedExecutorBackend) -- `run` Method
+
+[source, scala]
+----
+run(): Unit
+----
+
+When called, you should see the following DEBUG message in the logs:
+
+```
+DEBUG ExecutorRunnable: Starting Executor Container
+```
+
+`run` creates a YARN https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/client/api/NMClient.html[NMClient] (to communicate with YARN NodeManager service), inits it with <<conf, YarnConfiguration>> and starts it.
+
+NOTE: `run` uses <<conf, YarnConfiguration>> that was given when <<creating-instance, `ExecutorRunnable` was created>>.
+
+In the end, `run` <<startContainer, starts `CoarseGrainedExecutorBackend` in the YARN container>>.
+
+NOTE: `run` is used exclusively when link:spark-yarn-YarnAllocator.adoc#runAllocatedContainers[`YarnAllocator` schedules `ExecutorRunnables` in allocated YARN resource containers].
+
+=== [[startContainer]] Starting YARN Resource Container -- `startContainer` Method
+
+[source, scala]
+----
+startContainer(): java.util.Map[String, ByteBuffer]
+----
+
+`startContainer` uses YARN NodeManager's https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/client/api/NMClient.html[NMClient] API to start a link:../spark-CoarseGrainedExecutorBackend.adoc[CoarseGrainedExecutorBackend] in a YARN container.
+
+[TIP]
+====
+`startContainer` follows the design pattern to request YARN NodeManager to start a YARN resource container:
+
+[source, scala]
+----
+val ctx = Records.newRecord(classOf[ContainerLaunchContext]).asInstanceOf[ContainerLaunchContext]
+ctx.setLocalResources(...)
+ctx.setEnvironment(...)
+ctx.setTokens(...)
+ctx.setCommands(...)
+ctx.setApplicationACLs(...)
+ctx.setServiceData(...)
+nmClient.startContainer(container, ctx)
+----
+====
+
+`startContainer` creates a YARN https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/api/records/ContainerLaunchContext.html[ContainerLaunchContext].
+
+NOTE: YARN https://hadoop.apache.org/docs/current/api/org/apache/hadoop/yarn/api/records/ContainerLaunchContext.html[ContainerLaunchContext] represents all of the information for the YARN NodeManager to launch a resource container.
+
+`startContainer` then sets <<localResources, local resources>> and <<prepareEnvironment, environment>> to the `ContainerLaunchContext`.
+
+NOTE: `startContainer` uses <<localResources, local resources>> given when <<creating-instance, `ExecutorRunnable` was created>>.
+
+`startContainer` sets security tokens to the `ContainerLaunchContext` (using Hadoop's `UserGroupInformation` and the current user's credentials).
+
+`startContainer` sets the <<prepareCommand, command>> (to launch `CoarseGrainedExecutorBackend`) to the `ContainerLaunchContext`.
+
+`startContainer` sets the link:spark-yarn-YarnSparkHadoopUtil.adoc#getApplicationAclsForYarn[application ACLs] to the `ContainerLaunchContext`.
+
+If link:../spark-ExternalShuffleService.adoc#spark.shuffle.service.enabled[spark.shuffle.service.enabled] property is enabled, `startContainer` registers the `ContainerLaunchContext` with the YARN shuffle service started on the YARN NodeManager under `spark_shuffle` service name.
+
+In the end, `startContainer` requests the <<nmClient, YARN NodeManager>> to start the YARN container with the `ContainerLaunchContext` context.
+
+NOTE: `startContainer` uses <<nmClient, nmClient>> internal reference to send the request with the YARN resource container given when <<creating-instance, `ExecutorRunnable` was created>>.
+
+If any exception happens, `startContainer` reports `SparkException`.
+
+```
+Exception while starting container [containerId] on host [hostname]
+```
+
+NOTE: `startContainer` is used exclusively when `ExecutorRunnable` <<run, is started>>.
+
+=== [[launchContextDebugInfo]] Building Launch Context Diagnostic Information (with Command, Environment and Resources) -- `launchContextDebugInfo` Method
+
+[source, scala]
+----
+launchContextDebugInfo(): String
+----
+
+`launchContextDebugInfo` <<prepareCommand, prepares the command to launch `CoarseGrainedExecutorBackend`>> (as `commands` value) and <<prepareEnvironment, collects environment variables for `CoarseGrainedExecutorBackend` containers>> (as `env` value).
+
+`launchContextDebugInfo` returns the launch context debug info.
+
+```
+===============================================================================
+YARN executor launch context:
+  env:
+    [key] -> [value]
+    ...
+
+  command:
+    [commands]
+
+  resources:
+    [key] -> [value]
+===============================================================================
+```
+
+NOTE: `resources` entry is the input <<localResources, localResources>> given when <<creating-instance, `ExecutorRunnable` was created>>.
+
+NOTE: `launchContextDebugInfo` is used when link:spark-yarn-applicationmaster.adoc#registerAM[`ApplicationMaster` registers itself with YARN ResourceManager].

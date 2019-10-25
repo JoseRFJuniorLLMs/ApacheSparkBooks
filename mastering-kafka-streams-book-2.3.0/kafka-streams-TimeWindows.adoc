@@ -1,0 +1,89 @@
+== [[TimeWindows]] TimeWindows -- Time-Bound Window Specification
+
+`TimeWindows` is a <<kafka-streams-Windows.adoc#, window specification>> of <<kafka-streams-internals-TimeWindow.adoc#, time windows>>.
+
+[[creating-instance]]
+`TimeWindows` is described by the following properties:
+
+* [[sizeMs]] *Window duration* (aka _window size_) (in millis)
+* [[advanceMs]] *Advance interval* (in millis)
+* [[grace]] *Grace period* for late events
+* [[maintainDurationMs]] *Maintain duration* (in millis)
+
+NOTE: <<maintainDurationMs, Maintain duration>> is no longer in use.
+
+`TimeWindows` can be created only using the <<of, of>> factory method.
+
+[source, java]
+----
+static TimeWindows of(final Duration size)
+----
+
+`of` is used to create a time specification of *tumbling windows* which are fixed-sized, gap-less, non-overlapping windows (and simply sets the <<sizeMs, sizeMs>> and <<advanceMs, advanceMs>> internal properties to the given value).
+
+[source, scala]
+----
+import org.apache.kafka.streams.kstream.TimeWindows
+import java.time.Duration
+val timeWindows = TimeWindows.of(Duration.ofMinutes(1))
+scala> println(timeWindows)
+TimeWindows{maintainDurationMs=86400000, sizeMs=60000, advanceMs=60000, grace=null, segments=3}
+----
+
+`TimeWindows` can be further configured using the <<advanceBy, advanceBy>> and <<grace-method, grace>> methods.
+
+[source, java]
+----
+TimeWindows advanceBy(final Duration advance)
+----
+
+`advanceBy` allows for a time specification of *hopping windows* which are fixed-sized, overlapping windows (and simply sets the <<advanceMs, advanceMs>> internal property).
+
+[source, scala]
+----
+import org.apache.kafka.streams.kstream.TimeWindows
+import java.time.Duration
+val timeWindows = TimeWindows
+  .of(Duration.ofMinutes(1))
+  .advanceBy(Duration.ofSeconds(30))
+scala> println(timeWindows)
+TimeWindows{maintainDurationMs=86400000, sizeMs=60000, advanceMs=30000, grace=null, segments=3}
+----
+
+[source, java]
+----
+TimeWindows grace(final Duration afterWindowEnd)
+----
+
+`grace` specifies how long to wait for *late events* to be included in a time window (and simply sets the <<grace, grace>> internal property).
+
+[source, scala]
+----
+import org.apache.kafka.streams.kstream.TimeWindows
+import java.time.Duration
+val timeWindows = TimeWindows
+  .of(Duration.ofMinutes(1))
+  .grace(Duration.ofMinutes(2)) // 1 minute late after a time window has elapsed
+scala> println(timeWindows)
+TimeWindows{maintainDurationMs=86400000, sizeMs=60000, advanceMs=60000, grace=PT2M, segments=3}
+----
+
+=== [[windowsFor]] `windowsFor` Method
+
+[source, java]
+----
+Map<Long, TimeWindow> windowsFor(final long timestamp)
+----
+
+NOTE: `windowsFor` is part of the <<kafka-streams-Windows.adoc#windowsFor, Windows Contract>> to...FIXME.
+
+`windowsFor`...FIXME
+
+[source, scala]
+----
+import collection.JavaConverters._
+val windows = timeWindows.windowsFor(1.minute.toMillis).asScala
+scala> windows.foreach(println)
+(30000,Window{start=30000, end=90000})
+(60000,Window{start=60000, end=120000})
+----

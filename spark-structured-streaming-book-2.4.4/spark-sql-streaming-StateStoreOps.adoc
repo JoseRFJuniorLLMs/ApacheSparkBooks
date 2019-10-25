@@ -1,0 +1,60 @@
+== [[StateStoreOps]] StateStoreOps -- Extension Methods for Creating StateStoreRDD
+
+[[dataRDD]]
+`StateStoreOps` is a *Scala implicit class* of a data RDD (of type `RDD[T]`) to <<mapPartitionsWithStateStore, create a StateStoreRDD>> for the following physical operators:
+
+* <<spark-sql-streaming-FlatMapGroupsWithStateExec.adoc#, FlatMapGroupsWithStateExec>>
+
+* <<spark-sql-streaming-StateStoreRestoreExec.adoc#, StateStoreRestoreExec>>
+
+* <<spark-sql-streaming-StateStoreSaveExec.adoc#, StateStoreSaveExec>>
+
+* <<spark-sql-streaming-StreamingDeduplicateExec.adoc#, StreamingDeduplicateExec>>
+
+NOTE: http://docs.scala-lang.org/overviews/core/implicit-classes.html[Implicit Classes] are a language feature in Scala for *implicit conversions* with *extension methods* for existing types.
+
+=== [[mapPartitionsWithStateStore]] Creating StateStoreRDD (with storeUpdateFunction Aborting StateStore When Task Fails) -- `mapPartitionsWithStateStore` Method
+
+[source, scala]
+----
+mapPartitionsWithStateStore[U](
+  stateInfo: StatefulOperatorStateInfo,
+  keySchema: StructType,
+  valueSchema: StructType,
+  indexOrdinal: Option[Int],
+  sessionState: SessionState,
+  storeCoordinator: Option[StateStoreCoordinatorRef])(
+  storeUpdateFunction: (StateStore, Iterator[T]) => Iterator[U]): StateStoreRDD[T, U]
+// Used for testing only
+mapPartitionsWithStateStore[U](
+  sqlContext: SQLContext,
+  stateInfo: StatefulOperatorStateInfo,
+  keySchema: StructType,
+  valueSchema: StructType,
+  indexOrdinal: Option[Int])(
+  storeUpdateFunction: (StateStore, Iterator[T]) => Iterator[U]): StateStoreRDD[T, U] // <1>
+----
+<1> Uses `sqlContext.streams.stateStoreCoordinator` to access `StateStoreCoordinator`
+
+Internally, `mapPartitionsWithStateStore` requests `SparkContext` to clean `storeUpdateFunction` function.
+
+NOTE: `mapPartitionsWithStateStore` uses the <<dataRDD, enclosing RDD>> to access the current `SparkContext`.
+
+NOTE: *Function Cleaning* is to clean a closure from unreferenced variables before it is serialized and sent to tasks. `SparkContext` reports a `SparkException` when the closure is not serializable.
+
+`mapPartitionsWithStateStore` then creates a (wrapper) function to link:spark-sql-streaming-StateStore.adoc#abort[abort] the `StateStore` if link:spark-sql-streaming-StateStore.adoc#hasCommitted[state updates had not been committed] before a task finished (which is to make sure that the `StateStore` has been link:spark-sql-streaming-StateStore.adoc#commit[committed] or link:spark-sql-streaming-StateStore.adoc##abort[aborted] in the end to follow the contract of `StateStore`).
+
+NOTE: `mapPartitionsWithStateStore` uses `TaskCompletionListener` to be notified when a task has finished.
+
+In the end, `mapPartitionsWithStateStore` creates a link:spark-sql-streaming-StateStoreRDD.adoc[StateStoreRDD] (with the wrapper function, `SessionState` and link:spark-sql-streaming-StateStoreCoordinatorRef.adoc[StateStoreCoordinatorRef]).
+
+[NOTE]
+====
+`mapPartitionsWithStateStore` is used when the following physical operators are executed:
+
+* <<spark-sql-streaming-FlatMapGroupsWithStateExec.adoc#, FlatMapGroupsWithStateExec>>
+* <<spark-sql-streaming-StateStoreRestoreExec.adoc#, StateStoreRestoreExec>>
+* <<spark-sql-streaming-StateStoreSaveExec.adoc#, StateStoreSaveExec>>
+* <<spark-sql-streaming-StreamingDeduplicateExec.adoc#, StreamingDeduplicateExec>>
+* <<spark-sql-streaming-StreamingGlobalLimitExec.adoc#, StreamingGlobalLimitExec>>
+====

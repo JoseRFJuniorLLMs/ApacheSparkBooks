@@ -1,0 +1,113 @@
+== [[StoreBuilder]] StoreBuilder Contract -- State Store Builders
+
+`StoreBuilder` is the <<contract, abstraction>> of <<implementations, state store builders>> that can <<build, build a state store>> (with optional <<withCachingEnabled, caching>> and <<withLoggingEnabled, logging>>).
+
+[[implementations]]
+NOTE: <<kafka-streams-internals-AbstractStoreBuilder.adoc#, AbstractStoreBuilder>> is the one and only known base implementation of the <<contract, StoreBuilder Contract>>.
+
+`StoreBuilder` is used to add a local or global <<kafka-streams-StateStore.adoc#, state store>> to a topology using the following APIs:
+
+* <<kafka-streams-StreamsBuilder.adoc#, StreamsBuilder>> (i.e. <<kafka-streams-StreamsBuilder.adoc#addStateStore, StreamsBuilder.addStateStore>> and <<kafka-streams-StreamsBuilder.adoc#addGlobalStore, StreamsBuilder.addGlobalStore>>)
+
+* <<kafka-streams-Topology.adoc#, Topology>> (i.e. <<kafka-streams-Topology.adoc#addStateStore, Topology.addStateStore>> and <<kafka-streams-Topology.adoc#addGlobalStore, Topology.addGlobalStore>>).
+
+[[contract]]
+.StoreBuilder Contract
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| build
+a| [[build]]
+
+[source, java]
+----
+T build()
+----
+
+Builds (_creates_) a <<kafka-streams-StateStore.adoc#, state store>>
+
+Used when:
+
+* `InternalTopologyBuilder` is requested to <<kafka-streams-internals-InternalTopologyBuilder.adoc#rewriteTopology, rewriteTopology>> (with any `StoreBuilders` for global state stores)
+
+* `StateStoreFactory` is requested to <<kafka-streams-internals-InternalTopologyBuilder-StateStoreFactory.adoc#build, build a StateStore>> (when `InternalTopologyBuilder` is requested to <<kafka-streams-internals-InternalTopologyBuilder.adoc#buildProcessorNode, buildProcessorNode>>)
+
+| logConfig
+a| [[logConfig]]
+
+[source, java]
+----
+Map<String, String> logConfig()
+----
+
+Configuration of the changelog for a <<kafka-streams-StateStore.adoc#, state store>>
+
+Used when...FIXME
+
+| loggingEnabled
+a| [[loggingEnabled]]
+
+[source, java]
+----
+boolean loggingEnabled()
+----
+
+Indicates whether change-logging should be enabled (`true`) or not (`false`) on the <<kafka-streams-StateStore.adoc#, state store>>
+
+Used when:
+
+* `InternalTopologyBuilder` is requested to <<kafka-streams-internals-InternalTopologyBuilder.adoc#addGlobalStore, addGlobalStore>>
+
+| name
+a| [[name]]
+
+[source, java]
+----
+String name()
+----
+
+Name of <<kafka-streams-StateStore.adoc#, state stores>> to <<build, build>> (for identification purposes)
+
+| withCachingDisabled
+a| [[withCachingDisabled]]
+
+[source, java]
+----
+StoreBuilder<T> withCachingDisabled()
+----
+
+Disables caching on <<kafka-streams-StateStore.adoc#, state stores>>
+
+| withCachingEnabled
+a| [[withCachingEnabled]]
+
+[source, java]
+----
+StoreBuilder<T> withCachingEnabled()
+----
+
+Enables caching on <<kafka-streams-StateStore.adoc#, state stores>>
+
+| withLoggingDisabled
+a| [[withLoggingDisabled]]
+
+[source, java]
+----
+StoreBuilder<T> withLoggingDisabled()
+----
+
+Disables change-logging on <<kafka-streams-StateStore.adoc#, state stores>> (i.e. a changelog for any changes made to the stores)
+
+| withLoggingEnabled
+a| [[withLoggingEnabled]]
+
+[source, java]
+----
+StoreBuilder<T> withLoggingEnabled(Map<String, String> config)
+----
+
+Enables change-logging on <<kafka-streams-StateStore.adoc#, state stores>> (i.e. a changelog for any changes made to the stores)
+
+|===

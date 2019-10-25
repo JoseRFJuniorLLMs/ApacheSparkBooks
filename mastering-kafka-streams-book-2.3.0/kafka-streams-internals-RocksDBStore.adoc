@@ -1,0 +1,17 @@
+== [[RocksDBStore]] RocksDBStore
+
+`RocksDBStore` is a concrete <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> that...FIXME
+
+[[persistent]]
+`RocksDBStore` is always <<kafka-streams-StateStore.adoc#persistent, persistent>>.
+
+=== [[init]] Initialize State Store -- `init` Method
+
+[source, java]
+----
+void init(final ProcessorContext context, final StateStore root)
+----
+
+NOTE: `init` is part of <<kafka-streams-StateStore.adoc#init, StateStore Contract>> to initialize the <<kafka-streams-StateStore.adoc#, state store>>.
+
+`init`...FIXME

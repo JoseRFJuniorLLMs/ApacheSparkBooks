@@ -1,0 +1,79 @@
+== [[KeyValueStoreBuilder]] KeyValueStoreBuilder
+
+`KeyValueStoreBuilder` is a <<kafka-streams-StoreBuilder.adoc#, StoreBuilder>> (indirectly as a <<kafka-streams-internals-AbstractStoreBuilder.adoc#, AbstractStoreBuilder>>) that allows for <<build, building KeyValueStores>>.
+
+`KeyValueStoreBuilder` can be <<creating-instance, created>> using <<kafka-streams-Stores.adoc#keyValueStoreBuilder, Stores.keyValueStoreBuilder>>.
+
+[source, scala]
+----
+import org.apache.kafka.streams.state.Stores
+// Using Scala API for Kafka Streams
+import org.apache.kafka.streams.scala.Serdes
+val storeBuilder = Stores.keyValueStoreBuilder(
+  Stores.inMemoryKeyValueStore("store-name"),
+  Serdes.Integer,
+  Serdes.Long)
+scala> :type storeBuilder
+org.apache.kafka.streams.state.StoreBuilder[org.apache.kafka.streams.state.KeyValueStore[Int,Long]]
+
+import org.apache.kafka.streams.state.internals.KeyValueStoreBuilder
+assert(storeBuilder.isInstanceOf[KeyValueStoreBuilder[_, _]])
+----
+
+When <<build, requested for a state store>>, `KeyValueStoreBuilder` creates a new <<kafka-streams-internals-MeteredKeyValueBytesStore.adoc#, MeteredKeyValueBytesStore>> (with the state store from the <<storeSupplier, KeyValueBytesStoreSupplier>>).
+
+With <<kafka-streams-internals-AbstractStoreBuilder.adoc#enableCaching, caching enabled>>, `build` creates a <<kafka-streams-internals-CachingKeyValueStore.adoc#, CachingKeyValueStore>>.
+
+With <<kafka-streams-internals-AbstractStoreBuilder.adoc#enableLogging, logging enabled>>, `build` creates a <<kafka-streams-internals-ChangeLoggingKeyValueBytesStore.adoc#, ChangeLoggingKeyValueBytesStore>>.
+
+NOTE: <<kafka-streams-internals-AbstractStoreBuilder.adoc#enableLogging, Logging is enabled>> by default.
+
+=== [[creating-instance]] Creating KeyValueStoreBuilder Instance
+
+`KeyValueStoreBuilder` takes the following when created:
+
+* [[storeSupplier]] <<kafka-streams-KeyValueBytesStoreSupplier.adoc#, KeyValueBytesStoreSupplier>>
+* [[keySerde]] `Serde<K>` for keys
+* [[valueSerde]] `Serde<V>` for values
+* [[time]] `Time`
+
+=== [[build]] Building KeyValueStore -- `build` Method
+
+[source, java]
+----
+KeyValueStore<K, V> build()
+----
+
+NOTE: `build` is part of the <<kafka-streams-StoreBuilder.adoc#build, StoreBuilder Contract>> to build a <<kafka-streams-StateStore.adoc#, state store>>.
+
+`build` first requests the <<storeSupplier, KeyValueBytesStoreSupplier>> for a <<kafka-streams-StoreSupplier.adoc#get, StateStore>>.
+
+`build` then creates a <<kafka-streams-internals-MeteredKeyValueStore.adoc#, MeteredKeyValueStore>> (possibly with a <<maybeWrapCaching, CachingKeyValueStore with caching enabled>> and <<maybeWrapLogging, ChangeLoggingKeyValueBytesStore with logging enabled>>).
+
+==== [[maybeWrapLogging]] `maybeWrapLogging` Internal Method
+
+[source, java]
+----
+KeyValueStore<Bytes, byte[]> maybeWrapLogging(
+  KeyValueStore<Bytes, byte[]> inner)
+----
+
+`maybeWrapLogging` simply returns the given inner <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> with <<kafka-streams-internals-AbstractStoreBuilder.adoc#enableLogging, logging disabled>>.
+
+Otherwise, with <<kafka-streams-internals-AbstractStoreBuilder.adoc#enableLogging, logging enabled>>, `maybeWrapLogging` creates a <<kafka-streams-internals-ChangeLoggingKeyValueBytesStore.adoc#, ChangeLoggingKeyValueBytesStore>>.
+
+NOTE: `maybeWrapLogging` is used exclusively when `KeyValueStoreBuilder` is requested to <<build, build a KeyValueStore>>.
+
+==== [[maybeWrapCaching]] `maybeWrapCaching` Internal Method
+
+[source, java]
+----
+KeyValueStore<Bytes, byte[]> maybeWrapCaching(
+  KeyValueStore<Bytes, byte[]> inner)
+----
+
+`maybeWrapCaching` simply returns the given inner <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> with <<kafka-streams-internals-AbstractStoreBuilder.adoc#enableCaching, caching disabled>>.
+
+Otherwise, with <<kafka-streams-internals-AbstractStoreBuilder.adoc#enableCaching, caching enabled>>, `maybeWrapCaching` creates a <<kafka-streams-internals-CachingKeyValueStore.adoc#, CachingKeyValueStore>>.
+
+NOTE: `maybeWrapCaching` is used exclusively when `KeyValueStoreBuilder` is requested to <<build, build a KeyValueStore>>.

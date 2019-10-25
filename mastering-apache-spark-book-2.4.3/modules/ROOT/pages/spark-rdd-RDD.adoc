@@ -1,0 +1,123 @@
+== [[RDD]] RDD API -- Description of Distributed Computation
+
+[[T]]
+`RDD` is a description of a distributed computation over set of records (of type `T`).
+
+[[creating-instance]]
+`RDD` takes the following to be created:
+
+* [[_sc]] <<spark-SparkContext.adoc#, SparkContext>>
+* [[deps]] *Parent RDDs*, i.e. <<spark-rdd-Dependency.adoc#, Dependencies>> (`Seq[Dependency[_]]`) that have to be all computed successfully before this RDD
+
+NOTE: `RDD` is a Scala abstract class and cannot be <<creating-instance, created>> directly. It is created indirectly for concrete RDDs.
+
+[[id]]
+`RDD` is identified by a *unique identifier* (aka *RDD ID*) that is unique among all RDDs in the <<_sc, SparkContext>>.
+
+[source, scala]
+----
+id: Int
+----
+
+[[storageLevel]]
+`RDD` has a link:spark-rdd-StorageLevel.adoc[storage level] that...FIXME
+
+[source, scala]
+----
+storageLevel: StorageLevel
+----
+
+The storage level of an RDD is link:spark-rdd-StorageLevel.adoc#NONE[StorageLevel.NONE] by default which is...FIXME
+
+[[isBarrier_]]
+[[isBarrier]]
+An RDD can be part of a <<spark-barrier-execution-mode.adoc#barrier-stage, barrier stage>>. By default, `isBarrier` flag is enabled (`true`) when:
+
+. There are no <<spark-rdd-ShuffleDependency.adoc#, ShuffleDependencies>> among the <<spark-rdd.adoc#dependencies, dependencies>> of the RDD
+
+. There is at least one <<spark-rdd-Dependency.adoc#rdd, parent RDD>> that has the flag enabled
+
+NOTE: <<spark-rdd-ShuffledRDD.adoc#, ShuffledRDD>> has <<isBarrier, isBarrier>> flag always disabled.
+
+NOTE: <<spark-rdd-MapPartitionsRDD.adoc#, MapPartitionsRDD>> is the only one RDD that can have the <<isBarrier_, isBarrier>> flag enabled.
+
+=== [[getOrCompute]] Getting Or Computing RDD Partition -- `getOrCompute` Internal Method
+
+[source, scala]
+----
+getOrCompute(
+  partition: Partition,
+  context: TaskContext): Iterator[T]
+----
+
+`getOrCompute` creates a link:spark-BlockDataManager.adoc#RDDBlockId[RDDBlockId] for the <<id, RDD id>> and the link:spark-rdd-Partition.adoc#index[partition index].
+
+`getOrCompute` requests the `BlockManager` to link:spark-BlockManager.adoc#getOrElseUpdate[getOrElseUpdate] for the block ID (with the <<storageLevel, storage level>> and the `makeIterator` function).
+
+NOTE: `getOrCompute` uses link:spark-SparkEnv.adoc#get[SparkEnv] to access the current link:spark-SparkEnv.adoc#blockManager[BlockManager].
+
+[[getOrCompute-readCachedBlock]]
+`getOrCompute` records whether...FIXME (readCachedBlock)
+
+`getOrCompute` branches off per the response from the link:spark-BlockManager.adoc#getOrElseUpdate[BlockManager] and whether the internal `readCachedBlock` flag is now on or still off. In either case, `getOrCompute` creates an link:spark-InterruptibleIterator.adoc[InterruptibleIterator].
+
+NOTE: link:spark-InterruptibleIterator.adoc[InterruptibleIterator] simply delegates to a wrapped internal `Iterator`, but allows for link:spark-TaskContext.adoc#isInterrupted[task killing functionality].
+
+For a `BlockResult` available and `readCachedBlock` flag on, `getOrCompute`...FIXME
+
+For a `BlockResult` available and `readCachedBlock` flag off, `getOrCompute`...FIXME
+
+NOTE: The `BlockResult` could be found in a local block manager or fetched from a remote block manager. It may also have been stored (persisted) just now. In either case, the `BlockResult` is available (and link:spark-BlockManager.adoc#getOrElseUpdate[BlockManager.getOrElseUpdate] gives a `Left` value with the `BlockResult`).
+
+For `Right(iter)` (regardless of the value of `readCachedBlock` flag since...FIXME), `getOrCompute`...FIXME
+
+NOTE: link:spark-BlockManager.adoc#getOrElseUpdate[BlockManager.getOrElseUpdate] gives a `Right(iter)` value to indicate an error with a block.
+
+NOTE: `getOrCompute` is used on Spark executors.
+
+NOTE: `getOrCompute` is used exclusively when `RDD` is requested for the <<iterator, iterator over values in a partition>>.
+
+=== [[compute]] Computing Partition (in TaskContext) -- `compute` Method
+
+[source, scala]
+----
+compute(split: Partition, context: TaskContext): Iterator[T]
+----
+
+The abstract `compute` method computes the input `split` link:spark-rdd-partitions.adoc[partition] in the link:spark-TaskContext.adoc[TaskContext] to produce a collection of values (of type `T`).
+
+`compute` is implemented by any type of RDD in Spark and is called every time the records are requested unless RDD is link:spark-rdd-caching.adoc[cached] or link:spark-rdd-checkpointing.adoc[checkpointed] (and the records can be read from an external storage, but this time closer to the compute node).
+
+When an RDD is link:spark-rdd-caching.adoc[cached], for specified link:spark-rdd-StorageLevel.adoc[storage levels] (i.e. all but `NONE`) link:spark-cachemanager.adoc[`CacheManager` is requested to get or compute partitions].
+
+NOTE: `compute` method runs on the link:spark-driver.adoc[driver].
+
+=== [[dependencies]] RDD Dependencies -- `dependencies` Final Template Method
+
+[source, scala]
+----
+dependencies: Seq[Dependency[_]]
+----
+
+`dependencies` returns the link:spark-rdd-Dependency.adoc[dependencies of a RDD].
+
+NOTE: `dependencies` is a final method that no class in Spark can ever override.
+
+Internally, `dependencies` checks out whether the RDD is link:spark-rdd-checkpointing.adoc[checkpointed] and acts accordingly.
+
+For a RDD being checkpointed, `dependencies` returns a single-element collection with a link:spark-rdd-NarrowDependency.adoc#OneToOneDependency[OneToOneDependency].
+
+For a non-checkpointed RDD, `dependencies` collection is computed using <<contract, `getDependencies` method>>.
+
+NOTE: `getDependencies` method is an abstract method that custom RDDs are required to provide.
+
+=== [[iterator]] Accessing Records For Partition Lazily -- `iterator` Final Method
+
+[source, scala]
+----
+iterator(split: Partition, context: TaskContext): Iterator[T]
+----
+
+`iterator` link:spark-rdd-RDD.adoc#getOrCompute[gets or computes the `split` partition] when link:spark-rdd-caching.adoc[cached] or <<computeOrReadCheckpoint, computes it (possibly by reading from checkpoint)>>.
+
+NOTE: `iterator` is a `final` method that, despite being public, considered private and only available for implementing custom RDDs.

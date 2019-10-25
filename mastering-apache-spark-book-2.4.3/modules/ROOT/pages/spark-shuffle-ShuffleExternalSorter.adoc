@@ -1,0 +1,136 @@
+== [[ShuffleExternalSorter]] ShuffleExternalSorter -- Cache-Efficient Sorter
+
+`ShuffleExternalSorter` is a specialized cache-efficient sorter that sorts arrays of compressed record pointers and partition ids. By using only 8 bytes of space per record in the sorting array, `ShuffleExternalSorter` can fit more of the array into cache.
+
+`ShuffleExternalSorter` is <<creating-instance, created>> exclusively when `UnsafeShuffleWriter` is <<spark-shuffle-UnsafeShuffleWriter.adoc#creating-instance, created>> (and requested to <<spark-shuffle-UnsafeShuffleWriter.adoc#open, open>>).
+
+`ShuffleExternalSorter` is a concrete <<spark-memory-MemoryConsumer.adoc#, MemoryConsumer>> that can <<spill, spill to disk to free up execution memory>>.
+
+[[pageSize]]
+`ShuffleExternalSorter` uses the <<spark-memory-MemoryConsumer.adoc#pageSize, page size>> to be the minimum of `PackedRecordPointer.MAXIMUM_PAGE_SIZE_BYTES` and link:spark-memory-TaskMemoryManager.adoc#pageSizeBytes[pageSizeBytes], and Tungsten memory mode).
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging levels for `org.apache.spark.shuffle.sort.ShuffleExternalSorter` logger to see what happens in `ShuffleExternalSorter`.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.shuffle.sort.ShuffleExternalSorter=ALL
+```
+
+Refer to <<spark-logging.adoc#, Logging>>.
+====
+
+=== [[getMemoryUsage]] `getMemoryUsage` Internal Method
+
+[source, java]
+----
+long getMemoryUsage()
+----
+
+`getMemoryUsage`...FIXME
+
+NOTE: `getMemoryUsage` is used when...FIXME
+
+=== [[closeAndGetSpills]] `closeAndGetSpills` Method
+
+CAUTION: FIXME
+
+=== [[insertRecord]] `insertRecord` Method
+
+CAUTION: FIXME
+
+=== [[freeMemory]] `freeMemory` Method
+
+CAUTION: FIXME
+
+=== [[getPeakMemoryUsedBytes]] `getPeakMemoryUsedBytes` Method
+
+CAUTION: FIXME
+
+=== [[writeSortedFile]] `writeSortedFile` Internal Method
+
+[source, java]
+----
+void writeSortedFile(boolean isLastFile)
+----
+
+`writeSortedFile`...FIXME
+
+NOTE: `writeSortedFile` is used when...FIXME
+
+=== [[cleanupResources]] `cleanupResources` Method
+
+CAUTION: FIXME
+
+=== [[creating-instance]] Creating ShuffleExternalSorter Instance
+
+`ShuffleExternalSorter` takes the following to be created:
+
+* [[memoryManager]] <<spark-memory-TaskMemoryManager.adoc#, TaskMemoryManager>>
+* [[blockManager]] <<spark-BlockManager.adoc#, BlockManager>>
+* [[taskContext]] <<spark-TaskContext.adoc#, TaskContext>>
+* [[initialSize]] Initial size
+* [[numPartitions]] Number of partitions
+* [[conf]] <<spark-SparkConf.adoc#, SparkConf>>
+* [[writeMetrics]] <<spark-executor-ShuffleWriteMetrics.adoc#, ShuffleWriteMetrics>>
+
+[[fileBufferSizeBytes]]
+`ShuffleExternalSorter` uses link:spark-ExternalSorter.adoc#spark_shuffle_file_buffer[spark.shuffle.file.buffer] (for `fileBufferSizeBytes`) and `spark.shuffle.spill.numElementsForceSpillThreshold` (for `numElementsForSpillThreshold`) Spark properties.
+
+`ShuffleExternalSorter` creates a <<inMemSorter, ShuffleInMemorySorter>> (with `spark.shuffle.sort.useRadixSort` Spark property enabled by default).
+
+`ShuffleExternalSorter` initializes the <<internal-registries, internal registries and counters>>.
+
+=== [[spill]] Spilling To Disk (Freeing Up Execution Memory) -- `spill` Method
+
+[source, java]
+----
+long spill(
+  long size,
+  MemoryConsumer trigger)
+----
+
+NOTE: `spill` is part of the <<spark-memory-MemoryConsumer.adoc#spill, MemoryConsumer Contract>> to sort and spill the current records due to memory pressure.
+
+`spill` prints out the following INFO message to the logs:
+
+```
+Thread [threadId] spilling sort data of [memoryUsage] to disk ([spillsSize] [time|times] so far)
+```
+
+`spill` <<writeSortedFile, writeSortedFile>> (with the `isLastFile` flag disabled).
+
+`spill` <<freeMemory, frees execution memory>> (and records the memory bytes spilled as `spillSize`).
+
+`spill` then requests the <<inMemSorter, ShuffleInMemorySorter>> to <<spark-shuffle-ShuffleInMemorySorter.adoc#reset, reset>> followed by requesting the <<spark-TaskContext.adoc#taskMetrics, TaskMetrics>> (of the <<taskContext, TaskContext>>) to <<spark-executor-TaskMetrics.adoc#incMemoryBytesSpilled, increase the memory bytes spilled>>.
+
+In the end, `spill` returns the memory bytes spilled (_spill size_).
+
+[NOTE]
+====
+`spill` returns `0` when one of the following holds:
+
+* The given `trigger` is not the current `ShuffleExternalSorter`
+
+* <<inMemSorter, ShuffleInMemorySorter>> is not assigned
+
+* <<inMemSorter, ShuffleInMemorySorter>> manages no <<spark-shuffle-ShuffleInMemorySorter.adoc#numRecords, records>>
+====
+
+=== [[internal-registries]] Internal Properties
+
+.ShuffleExternalSorter's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="1m,3",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| allocatedPages
+a| [[allocatedPages]] (`LinkedList<MemoryBlock>`)
+
+Used when...FIXME
+
+|===

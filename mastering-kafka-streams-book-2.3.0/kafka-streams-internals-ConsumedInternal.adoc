@@ -1,0 +1,26 @@
+== [[ConsumedInternal]] ConsumedInternal -- Internal Accessors to Consumed Metadata
+
+`ConsumedInternal` is a <<kafka-streams-Consumed.adoc#, Consumed>> that is used internally as an accessor object to the following properties of the managed <<consumed, Consumed>> instance:
+
+* [[keyDeserializer]] `Deserializer` of keys (only when <<keySerde, Serde>> for keys is defined)
+
+* [[valueDeserializer]] `Deserializer` of values (only when <<valueSerde, Serde>> for values is defined)
+
+* [[offsetResetPolicy]] *Offset reset policy* (<<kafka-streams-Topology.adoc#, Topology.AutoOffsetReset>>)
+
+* <<timestampExtractor, TimestampExtractor>>
+
+[[creating-instance]]
+[[consumed]]
+`ConsumedInternal` takes a single <<kafka-streams-Consumed.adoc#, Consumed>>, its parts or none at all (that are used to create a `Consumed`) when created:
+
+* [[keySerde]] Key `Serde`
+* [[valSerde]][[valueSerde]] Value `Serde`
+* [[timestampExtractor]] <<kafka-streams-TimestampExtractor.adoc#, TimestampExtractor>>
+* [[offsetReset]] *Offset reset policy* (<<kafka-streams-Topology.adoc#, Topology.AutoOffsetReset>>)
+
+`ConsumedInternal` is <<creating-instance, created>> when:
+
+* `StreamsBuilder` is requested to <<kafka-streams-StreamsBuilder.adoc#stream, stream>>, <<kafka-streams-StreamsBuilder.adoc#table, table>>, <<kafka-streams-StreamsBuilder.adoc#globalTable, globalTable>>, and <<kafka-streams-StreamsBuilder.adoc#addGlobalStore, addGlobalStore>>
+
+* `KStreamImpl` is requested to <<kafka-streams-internals-KStreamImpl.adoc#through, through>>

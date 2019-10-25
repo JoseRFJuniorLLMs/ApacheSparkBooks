@@ -1,0 +1,245 @@
+== [[KTableImpl]] KTableImpl
+
+`KTableImpl` is...FIXME
+
+=== [[mapValues]] `mapValues` Method
+
+[source, java]
+----
+KTable<K, VR> mapValues(
+  final ValueMapper<? super V, ? extends VR> mapper)
+KTable<K, VR> mapValues(
+  final ValueMapper<? super V, ? extends VR> mapper,
+  final Materialized<K, VR, KeyValueStore<Bytes, byte[]>> materialized)
+KTable<K, VR> mapValues(
+  final ValueMapperWithKey<? super K, ? super V, ? extends VR> mapper)
+KTable<K, VR> mapValues(
+  final ValueMapperWithKey<? super K, ? super V, ? extends VR> mapper,
+  final Materialized<K, VR, KeyValueStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `mapValues` is part of link:kafka-streams-KTable.adoc#mapValues[KTable Contract] to...FIXME.
+
+`mapValues`...FIXME
+
+NOTE: `mapValues` is used when...FIXME
+
+=== [[join]] `join` Method
+
+[source, java]
+----
+<V1, R> KTable<K, R> join(
+  final KTable<K, V1> other,
+  final ValueJoiner<? super V, ? super V1, ? extends R> joiner)
+<VO, VR> KTable<K, VR> join(
+  final KTable<K, VO> other,
+  final ValueJoiner<? super V, ? super VO, ? extends VR> joiner,
+  final Materialized<K, VR, KeyValueStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `join` is part of link:kafka-streams-KTable.adoc#join[KTable Contract] to...FIXME.
+
+`join`...FIXME
+
+NOTE: `join` is used when...FIXME
+
+=== [[leftJoin]] `leftJoin` Method
+
+[source, java]
+----
+<V1, R> KTable<K, R> leftJoin(
+  final KTable<K, V1> other,
+  final ValueJoiner<? super V, ? super V1, ? extends R> joiner)
+<VO, VR> KTable<K, VR> leftJoin(
+  final KTable<K, VO> other,
+  final ValueJoiner<? super V, ? super VO, ? extends VR> joiner,
+  final Materialized<K, VR, KeyValueStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `leftJoin` is part of link:kafka-streams-KTable.adoc#leftJoin[KTable Contract] to...FIXME.
+
+`leftJoin`...FIXME
+
+NOTE: `leftJoin` is used when...FIXME
+
+=== [[outerJoin]] `outerJoin` Method
+
+[source, java]
+----
+<V1, R> KTable<K, R> outerJoin(
+  final KTable<K, V1> other,
+  final ValueJoiner<? super V, ? super V1, ? extends R> joiner)
+<VO, VR> KTable<K, VR> outerJoin(
+  final KTable<K, VO> other,
+  final ValueJoiner<? super V, ? super VO, ? extends VR> joiner,
+  final Materialized<K, VR, KeyValueStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `outerJoin` is part of link:kafka-streams-KTable.adoc#outerJoin[KTable Contract] to...FIXME.
+
+`outerJoin`...FIXME
+
+NOTE: `outerJoin` is used when...FIXME
+
+=== [[doFilter]] `doFilter` Internal Method
+
+[source, java]
+----
+KTable<K, V> doFilter(
+  Predicate<? super K, ? super V> predicate,
+  MaterializedInternal<K, V, KeyValueStore<Bytes, byte[]>> materialized,
+  boolean filterNot)
+----
+
+`doFilter`...FIXME
+
+NOTE: `doFilter` is used when `KTableImpl` is requested to <<filter, filter>> and <<filterNot, filterNot>>.
+
+=== [[doMapValues]] `doMapValues` Internal Method
+
+[source, java]
+----
+KTable<K, VR> doMapValues(
+  ValueMapperWithKey<
+    ? super K,
+    ? super V,
+    ? extends VR> mapper,
+  MaterializedInternal<K, VR, KeyValueStore<Bytes, byte[]>> materializedInternal)
+----
+
+`doMapValues`...FIXME
+
+NOTE: `doMapValues` is used exclusively when `KTableImpl` is requested to <<mapValues, mapValues>>.
+
+=== [[doTransformValues]] `doTransformValues` Internal Method
+
+[source, java]
+----
+KTable<K, VR> doTransformValues(
+  ValueTransformerWithKeySupplier<
+    ? super K,
+    ? super V,
+    ? extends VR> transformerSupplier,
+  MaterializedInternal<K, VR, KeyValueStore<Bytes, byte[]>> materialized,
+  String... stateStoreNames)
+----
+
+`doTransformValues`...FIXME
+
+NOTE: `doTransformValues` is used exclusively when `KTableImpl` is requested to <<transformValues, transformValues>>.
+
+=== [[buildJoin]] `buildJoin` Internal Method
+
+[source, java]
+----
+<V1, R> KTable<K, R> buildJoin(
+  final AbstractStream<K> other,
+  final ValueJoiner<? super V, ? super V1, ? extends R> joiner,
+  final boolean leftOuter,
+  final boolean rightOuter,
+  final String joinMergeName,
+  final String internalQueryableName)
+----
+
+`buildJoin` link:kafka-streams-internals-AbstractStream.adoc#ensureJoinableWith[ensureJoinableWith] the `other` stream.
+
+`buildJoin`...FIXME
+
+NOTE: `buildJoin` is used exclusively when `KTableImpl` is requested to <<doJoin, doJoin>>.
+
+=== [[doJoin]] `doJoin` Internal Method
+
+[source, java]
+----
+KTable<K, VR> doJoin(
+  KTable<K, VO> other,
+  ValueJoiner<? super V, ? super VO, ? extends VR> joiner,
+  MaterializedInternal<K, VR, KeyValueStore<Bytes, byte[]>> materializedInternal,
+  boolean leftOuter,
+  boolean rightOuter)
+----
+
+`doJoin`...FIXME
+
+NOTE: `doJoin` is used when `KTableImpl` is requested to <<join, join>>, <<leftJoin, leftJoin>> and <<outerJoin, outerJoin>>.
+
+=== [[valueGetterSupplier]] `valueGetterSupplier` Method
+
+[source, java]
+----
+KTableValueGetterSupplier<K, V> valueGetterSupplier()
+----
+
+`valueGetterSupplier`...FIXME
+
+NOTE: `valueGetterSupplier` is used when...FIXME
+
+=== [[enableSendingOldValues]] `enableSendingOldValues` Method
+
+[source, java]
+----
+void enableSendingOldValues()
+----
+
+`enableSendingOldValues`...FIXME
+
+NOTE: `enableSendingOldValues` is used when...FIXME
+
+=== [[filter]] `filter` Method
+
+[source, java]
+----
+KTable<K, V> filter(
+  final Predicate<? super K, ? super V> predicate)
+KTable<K, V> filter(
+  final Predicate<? super K, ? super V> predicate,
+  final Materialized<K, V, KeyValueStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `filter` is part of the <<kafka-streams-KTable.adoc#filter, KTable Contract>> to...FIXME.
+
+`filter`...FIXME
+
+=== [[filterNot]] `filterNot` Method
+
+[source, java]
+----
+KTable<K, V> filterNot(
+  final Predicate<? super K, ? super V> predicate)
+KTable<K, V> filterNot(
+  final Predicate<? super K, ? super V> predicate,
+  final Materialized<K, V, KeyValueStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `filterNot` is part of the <<kafka-streams-KTable.adoc#filterNot, KTable Contract>> to...FIXME.
+
+`filterNot`...FIXME
+
+=== [[transformValues]] `transformValues` Method
+
+[source, java]
+----
+KTable<K, VR> transformValues(
+  final ValueTransformerWithKeySupplier<? super K, ? super V, ? extends VR> transformerSupplier,
+  final Materialized<K, VR, KeyValueStore<Bytes, byte[]>> materialized,
+  final String... stateStoreNames)
+KTable<K, VR> transformValues(
+  final ValueTransformerWithKeySupplier<? super K, ? super V, ? extends VR> transformerSupplier,
+  final String... stateStoreNames)
+----
+
+NOTE: `transformValues` is part of the <<kafka-streams-KTable.adoc#transformValues, KTable Contract>> to...FIXME.
+
+`transformValues`...FIXME
+
+=== [[suppress]] `suppress` Method
+
+[source, java]
+----
+KTable<K, V> suppress(
+  Suppressed<? super K> suppressed)
+----
+
+NOTE: `suppress` is part of the <<kafka-streams-KTable.adoc#suppress, KTable Contract>> to...FIXME.
+
+`suppress`...FIXME

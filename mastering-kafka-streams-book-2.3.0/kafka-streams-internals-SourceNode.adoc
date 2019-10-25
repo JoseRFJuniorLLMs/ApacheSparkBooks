@@ -1,0 +1,44 @@
+== [[SourceNode]] SourceNode
+
+`SourceNode` is a link:kafka-streams-internals-ProcessorNode.adoc[ProcessorNode] that...FIXME
+
+`SourceNode` is <<creating-instance, created>> exclusively when `SourceNodeFactory` is requested to link:kafka-streams-internals-InternalTopologyBuilder-SourceNodeFactory.adoc#build[build a processor node] (when...FIXME)
+
+[[context]]
+`SourceNode` gets a link:kafka-streams-ProcessorContext.adoc[ProcessorContext] when <<init, initialized>>. It is later used when `SourceNode` <<process, processes a record>> (and simply forwards it downstream).
+
+=== [[init]] `init` Method
+
+[source, java]
+----
+void init(ProcessorContext context)
+----
+
+NOTE: `init` is part of link:kafka-streams-internals-ProcessorNode.adoc#init[ProcessorNode Contract] to...FIXME.
+
+`init`...FIXME
+
+=== [[process]] Processing Record -- `process` Method
+
+[source, java]
+----
+void process(
+  K key,
+  V value)
+----
+
+NOTE: `process` is part of link:kafka-streams-internals-ProcessorNode.adoc#process[ProcessorNode Contract] to...FIXME.
+
+`process` simply requests <<context, ProcessorContext>> to link:kafka-streams-ProcessorContext.adoc#forward[forward] followed by informing the `sourceNodeForwardSensor` that a record was processed.
+
+=== [[creating-instance]] Creating SourceNode Instance
+
+`SourceNode` takes the following when created:
+
+* [[name]] Node name
+* [[topics]] List of topics
+* [[timestampExtractor]] `TimestampExtractor`
+* [[keyDeserializer]] Key deserializer
+* [[valDeserializer]] Value deserializer
+
+`SourceNode` initializes the <<internal-registries, internal registries and counters>>.

@@ -1,0 +1,14 @@
+== [[ChangeLoggingWindowBytesStore]] ChangeLoggingWindowBytesStore
+
+`ChangeLoggingWindowBytesStore` is...FIXME
+
+=== [[init]] Initialize State Store -- `init` Method
+
+[source, java]
+----
+void init(final ProcessorContext context, final StateStore root)
+----
+
+NOTE: `init` is part of...FIXME
+
+`init`...FIXME

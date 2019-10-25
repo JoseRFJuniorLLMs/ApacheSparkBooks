@@ -1,0 +1,73 @@
+== [[Processor]] Processor Contract -- Stream Processing Node
+
+`Processor` is the main <<contract, abstraction>> of the <<kafka-streams-processor-api.adoc#, Low-Level Processor API>> for *record stream processors* (aka _stream processing nodes_) that can <<process, process one record at a time>>.
+
+`Processor` can be added to a <<kafka-streams-Topology.adoc#, Topology>> using <<kafka-streams-Topology.adoc#addProcessor, Topology.addProcessor>> operator (via <<kafka-streams-ProcessorSupplier.adoc#, ProcessorSupplier>>).
+
+NOTE: <<kafka-streams-streams-dsl.adoc#, Streams DSL -- High-Level Stream Processing DSL>> comes with the <<kafka-streams-KStream.adoc#process, KStream.process>> operator to add a custom `Processor` to a topology (via <<kafka-streams-ProcessorSupplier.adoc#, ProcessorSupplier>>).
+
+The lifecycle of a `Processor` is fully controlled by a corresponding <<kafka-streams-internals-ProcessorNode.adoc#processor, ProcessorNode>>.
+
+[[contract]]
+.Processor Contract
+[cols="1m,2",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| close
+a| [[close]]
+
+[source, java]
+----
+void close()
+----
+
+Closes the processor
+
+Used exclusively when `ProcessorNode` is requested to <<kafka-streams-internals-ProcessorNode.adoc#close, close>>.
+
+| init
+a| [[init]]
+
+[source, java]
+----
+void init(ProcessorContext context)
+----
+
+Initializes the processor with a <<kafka-streams-ProcessorContext.adoc#, ProcessorContext>> (that can be used to decide whether a record should be <<kafka-streams-ProcessorContext.adoc#forward, forwarded downstream>> to child processors if there are any)
+
+Used exclusively when `ProcessorNode` is requested to <<kafka-streams-internals-ProcessorNode.adoc#init, init>>
+
+| process
+a| [[process]]
+
+[source, java]
+----
+void process(K key, V value)
+----
+
+Processes a single record (as a pair of a `K` key and a `V` value)
+
+Used exclusively when `ProcessorNode` is requested to <<kafka-streams-internals-ProcessorNode.adoc#process, process a single record (as a key and value pair)>>.
+
+|===
+
+TIP: Use <<AbstractProcessor, AbstractProcessor>> when you want to develop a custom `Processor`.
+
+[[implementations]]
+.Processors (Direct Implementations)
+[cols="1,2",options="header",width="100%"]
+|===
+| Processor
+| Description
+
+| <<kafka-streams-AbstractProcessor.adoc#, AbstractProcessor>>
+| [[AbstractProcessor]] Abstract processor that manages a <<kafka-streams-ProcessorContext.adoc#, ProcessorContext>> instance and provides a no-op <<close, close>> implementation
+
+| <<kafka-streams-internals-KStreamTransformValuesProcessor.adoc#, KStreamTransformValuesProcessor>>
+| [[KStreamTransformValuesProcessor]]
+
+| <<kafka-streams-internals-KTableSuppressProcessor.adoc#, KTableSuppressProcessor>>
+| [[KTableSuppressProcessor]]
+|===

@@ -1,0 +1,32 @@
+== [[ProcessorNodeFactory]] ProcessorNodeFactory
+
+`ProcessorNodeFactory` is a concrete link:kafka-streams-internals-InternalTopologyBuilder-NodeFactory.adoc[NodeFactory] that can <<build, build a processor node>> for a <<supplier, ProcessorSupplier>> and optional <<stateStoreNames, state stores>>.
+
+NOTE: `ProcessorNodeFactory` is a private class.
+
+`ProcessorNodeFactory` is <<creating-instance, created>> exclusively when `InternalTopologyBuilder` is requested to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addGlobalStore[register a global state store] or link:kafka-streams-internals-InternalTopologyBuilder.adoc#addProcessor[addProcessor].
+
+[[stateStoreNames]]
+`ProcessorNodeFactory` manages *names of the state stores* that a `Processor` can be associated with (as part of a <<build, ProcessorNode>>).
+
+[[addStateStore]]
+`ProcessorNodeFactory` can have state stores registered (by the name) (which happens when `InternalTopologyBuilder` is requested to link:kafka-streams-internals-InternalTopologyBuilder.adoc#addGlobalStore[register a global state store] or link:kafka-streams-internals-InternalTopologyBuilder.adoc#connectProcessorAndStateStore[connectProcessorAndStateStore]).
+
+=== [[build]] `build` Factory Method
+
+[source, java]
+----
+ProcessorNode build()
+----
+
+NOTE: `build` is part of link:kafka-streams-internals-InternalTopologyBuilder-NodeFactory.adoc#build[NodeFactory Contract] to...FIXME.
+
+`build` requests <<supplier, ProcessorSupplier>> to link:kafka-streams-ProcessorSupplier.adoc#get[get a Processor] and then creates a link:kafka-streams-internals-ProcessorNode.adoc#creating-instance[ProcessorNode] with the <<name, name>>, the processor and the <<stateStoreNames, stateStoreNames>>.
+
+=== [[creating-instance]] Creating ProcessorNodeFactory Instance
+
+`ProcessorNodeFactory` takes the following when created:
+
+* [[name]] Processor name
+* [[predecessors]] Predecessor nodes (by name)
+* [[supplier]] link:kafka-streams-ProcessorSupplier.adoc[ProcessorSupplier]

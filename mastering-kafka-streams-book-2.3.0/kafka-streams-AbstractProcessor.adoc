@@ -1,0 +1,102 @@
+== [[AbstractProcessor]] AbstractProcessor -- Base for Stream Processors
+
+`AbstractProcessor` is the base implementation of the <<kafka-streams-Processor.adoc#, Processor contract>> for <<implementations, stream processors>> that manages a <<context, ProcessorContext>> and provides a no-op implementation of <<kafka-streams-Processor.adoc#close, close>>.
+
+[[context]]
+`AbstractProcessor` manages a link:kafka-streams-ProcessorContext.adoc[ProcessorContext] that is assigned when an `AbstractProcessor` is requested to <<kafka-streams-Processor.adoc#init, initialize>>.
+
+[[implementations]]
+.AbstractProcessors
+[cols="1,2",options="header",width="100%"]
+|===
+| AbstractProcessor
+| Description
+
+| KStreamAggregateProcessor
+| [[KStreamAggregateProcessor]]
+
+| <<kafka-streams-internals-KStreamBranch.adoc#KStreamBranchProcessor, KStreamBranchProcessor>>
+| [[KStreamBranchProcessor]] Forwards a record to exactly one of the child processors
+
+| <<kafka-streams-internals-KStreamFilter.adoc#KStreamFilterProcessor, KStreamFilterProcessor>>
+| [[KStreamFilterProcessor]]
+
+| KStreamFlatMapProcessor
+| [[KStreamFlatMapProcessor]]
+
+| KStreamFlatMapValuesProcessor
+| [[KStreamFlatMapValuesProcessor]]
+
+| <<kafka-streams-internals-KStreamJoinWindowProcessor.adoc#, KStreamJoinWindowProcessor>>
+| [[KStreamJoinWindowProcessor]]
+
+| KStreamKStreamJoinProcessor
+| [[KStreamKStreamJoinProcessor]]
+
+| KStreamKTableJoinProcessor
+| [[KStreamKTableJoinProcessor]]
+
+| KStreamMapProcessor
+| [[KStreamMapProcessor]]
+
+| KStreamMapProcessor
+| [[KStreamMapProcessor]]
+
+| KStreamPassThroughProcessor
+| [[KStreamPassThroughProcessor]]
+
+| <<kafka-streams-internals-KStreamPeek.adoc#KStreamPeekProcessor, KStreamPeekProcessor>>
+| [[KStreamPeekProcessor]] Executes an action with records (_peeks at them_)
+
+| KStreamPrintProcessor
+| [[KStreamPrintProcessor]]
+
+| KStreamReduceProcessor
+| [[KStreamReduceProcessor]]
+
+| <<kafka-streams-internals-KStreamSessionWindowAggregateProcessor.adoc#, KStreamSessionWindowAggregateProcessor>>
+| [[KStreamSessionWindowAggregateProcessor]]
+
+| <<kafka-streams-internals-KStreamTransformProcessor.adoc#, KStreamTransformProcessor>>
+| [[KStreamTransformProcessor]]
+
+| <<kafka-streams-internals-KStreamWindowAggregateProcessor.adoc#, KStreamWindowAggregateProcessor>>
+| [[KStreamWindowAggregateProcessor]]
+
+| KTableAggregateProcessor
+| [[KTableAggregateProcessor]]
+
+| KTableFilterProcessor
+| [[KTableFilterProcessor]]
+
+| KTableKTableJoinMergeProcessor
+| [[KTableKTableJoinMergeProcessor]]
+
+| KTableKTableJoinProcessor
+| [[KTableKTableJoinProcessor]]
+
+| KTableKTableLeftJoinProcessor
+| [[KTableKTableLeftJoinProcessor]]
+
+| KTableKTableOuterJoinProcessor
+| [[KTableKTableOuterJoinProcessor]]
+
+| KTableKTableRightJoinProcessor
+| [[KTableKTableRightJoinProcessor]]
+
+| KTableMapProcessor
+| [[KTableMapProcessor]]
+
+| KTableMapValuesProcessor
+| [[KTableMapValuesProcessor]]
+
+| KTableReduceProcessor
+| [[KTableReduceProcessor]]
+
+| <<kafka-streams-internals-KTableSourceProcessor.adoc#, KTableSourceProcessor>>
+| [[KTableSourceProcessor]]
+
+| KTableTransformValuesProcessor
+| [[KTableTransformValuesProcessor]]
+
+|===

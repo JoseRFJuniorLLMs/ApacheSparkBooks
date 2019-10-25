@@ -1,0 +1,113 @@
+== [[TimeWindowedKStreamImpl]] TimeWindowedKStreamImpl
+
+`TimeWindowedKStreamImpl` is a <<kafka-streams-internals-AbstractStream.adoc#, stream>> for <<kafka-streams-TimeWindowedKStream.adoc#, time-windowed streaming aggregations>>.
+
+`TimeWindowedKStreamImpl` is <<creating-instance, created>> exclusively when `KGroupedStreamImpl` is requested to <<kafka-streams-internals-KGroupedStreamImpl.adoc#windowedBy-Windows, windowedBy (with a Windows)>>.
+
+`TimeWindowedKStreamImpl` uses a <<aggregateBuilder, GroupedStreamAggregateBuilder>> for...FIXME
+
+=== [[materialize]] Creating StoreBuilder (of WindowStores) -- `materialize` Internal Method
+
+[source, java]
+----
+StoreBuilder<WindowStore<K, VR>> materialize(
+  final MaterializedInternal<K, VR, WindowStore<Bytes, byte[]>> materialized)
+----
+
+`materialize` creates a `StoreBuilder` of `WindowStores` per <<kafka-streams-internals-MaterializedInternal.adoc#, MaterializedInternal>>.
+
+Internally, `materialize` requests the given `MaterializedInternal` for <<kafka-streams-internals-MaterializedInternal.adoc#storeSupplier, WindowBytesStoreSupplier>>.
+
+Unless a <<kafka-streams-WindowBytesStoreSupplier.adoc#, WindowBytesStoreSupplier>> is specified, `materialize` ...FIXME
+
+`materialize` uses the given `MaterializedInternal` for <<kafka-streams-internals-MaterializedInternal.adoc#retention, retention>>.
+
+`materialize` throws a `IllegalArgumentException` when...FIXME
+
+```
+The retention period of the window store [name] must be no smaller than its window size plus the grace period. Got size=[[size]], grace=[[gracePeriodMs]], retention=[[retentionPeriod]]
+```
+
+`materialize` uses the `Stores` factory object to <<kafka-streams-Stores.adoc#persistentWindowStore, create a WindowBytesStoreSupplier>> (with the store name and the `retentionPeriod` of the `MaterializedInternal` and the window size).
+
+With `WindowBytesStoreSupplier` specified, `materialize` uses the `Stores` factory object to <<kafka-streams-Stores.adoc#windowStoreBuilder, create a StoreBuilder of WindowStores>> (with the `WindowBytesStoreSupplier` and the key and value serdes from the given `MaterializedInternal`).
+
+If the given `MaterializedInternal` has <<kafka-streams-internals-MaterializedInternal.adoc#loggingEnabled, loggingEnabled>> flag enabled, `materialize` requests the `StoreBuilder` to <<kafka-streams-StoreBuilder.adoc#withLoggingEnabled, withLoggingEnabled>> (with the <<kafka-streams-internals-MaterializedInternal.adoc#logConfig, logConfig>> of the given `MaterializedInternal`) or <<kafka-streams-StoreBuilder.adoc#withLoggingDisabled, withLoggingDisabled>> otherwise.
+
+If the given `MaterializedInternal` has <<kafka-streams-internals-MaterializedInternal.adoc#cachingEnabled, cachingEnabled>> flag enabled, `materialize` requests the `StoreBuilder` to <<kafka-streams-StoreBuilder.adoc#withCachingEnabled, withCachingEnabled>>.
+
+In the end, `materialize` returns the `StoreBuilder` of `WindowStores`.
+
+NOTE: `materialize` is used when `TimeWindowedKStreamImpl` is requested to <<doCount, doCount>>, <<aggregate, aggregate>> and <<reduce, reduce>> (when the internal <<aggregateBuilder, GroupedStreamAggregateBuilder>> is requested to <<kafka-streams-internals-GroupedStreamAggregateBuilder.adoc#build, build>>).
+
+=== [[aggregate]] `aggregate` Method
+
+[source, java]
+----
+KTable<Windowed<K>, VR> aggregate(
+  final Initializer<VR> initializer,
+  final Aggregator<? super K, ? super V, VR> aggregator)
+KTable<Windowed<K>, VR> aggregate(
+  final Initializer<VR> initializer,
+  final Aggregator<? super K, ? super V, VR> aggregator,
+  final Materialized<K, VR, WindowStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `aggregate` is part of the <<kafka-streams-TimeWindowedKStream.adoc#aggregate, TimeWindowedKStream Contract>> to...FIXME.
+
+`aggregate`...FIXME
+
+=== [[reduce]] `reduce` Method
+
+[source, java]
+----
+KTable<Windowed<K>, V> reduce(final Reducer<V> reducer) // <1>
+KTable<Windowed<K>, V> reduce(
+  final Reducer<V> reducer,
+  final Materialized<K, V, WindowStore<Bytes, byte[]>> materialized)
+----
+<1> Uses <<kafka-streams-Materialized.adoc#, Materialized>> with the serdes for <<keySerde, keys>> and <<valSerde, values>>
+
+NOTE: `reduce` is part of the <<kafka-streams-TimeWindowedKStream.adoc#reduce, TimeWindowedKStream Contract>> to combine record stream (by a grouped key).
+
+`reduce` creates a <<kafka-streams-internals-MaterializedInternal.adoc#, MaterializedInternal>> for the given <<kafka-streams-Materialized.adoc#, Materialized>> and requests it to <<kafka-streams-internals-MaterializedInternal.adoc#generateStoreNameIfNeeded, generateStoreNameIfNeeded>> (with `KSTREAM-REDUCE-` store prefix).
+
+In the end, `reduce` requests the <<aggregateBuilder, GroupedStreamAggregateBuilder>> to <<kafka-streams-internals-GroupedStreamAggregateBuilder.adoc#build, build>> (with `KSTREAM-REDUCE-` store prefix and a new `KStreamWindowReduce`).
+
+=== [[count]] `count` Method
+
+[source, java]
+----
+KTable<Windowed<K>, Long> count()
+KTable<Windowed<K>, Long> count(final Materialized<K, Long, WindowStore<Bytes, byte[]>> materialized)
+----
+
+NOTE: `count` is part of the <<kafka-streams-TimeWindowedKStream.adoc#count, TimeWindowedKStream Contract>> to...FIXME.
+
+`count`...FIXME
+
+=== [[doCount]] `doCount` Internal Method
+
+[source, java]
+----
+KTable<Windowed<K>, Long> doCount(final Materialized<K, Long, WindowStore<Bytes, byte[]>> materialized)
+----
+
+`doCount`...FIXME
+
+NOTE: `doCount` is used exclusively when `TimeWindowedKStreamImpl` is requested to <<count, count>>.
+
+=== [[creating-instance]] Creating TimeWindowedKStreamImpl Instance
+
+`TimeWindowedKStreamImpl` takes the following when created:
+
+* [[windows]] <<kafka-streams-Windows.adoc#, Windows>>
+* [[builder]] <<kafka-streams-internals-InternalStreamsBuilder.adoc#, InternalStreamsBuilder>>
+* [[sourceNodes]] Names of the source topics
+* [[name]] Name
+* [[keySerde]] `Serde<K>` for keys
+* [[valSerde]] `Serde<V>` for values
+* [[aggregateBuilder]] <<kafka-streams-internals-GroupedStreamAggregateBuilder.adoc#, GroupedStreamAggregateBuilder>>
+* [[streamsGraphNode]] <<kafka-streams-internals-StreamsGraphNode.adoc#, StreamsGraphNode>>
+
+`TimeWindowedKStreamImpl` initializes the <<internal-registries, internal registries and counters>>.

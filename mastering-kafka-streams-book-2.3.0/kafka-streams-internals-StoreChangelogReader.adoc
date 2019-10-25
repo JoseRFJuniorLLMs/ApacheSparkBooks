@@ -1,0 +1,279 @@
+== [[StoreChangelogReader]] StoreChangelogReader
+
+`StoreChangelogReader` is the default <<kafka-streams-internals-ChangelogReader.adoc#, ChangelogReader>>.
+
+`StoreChangelogReader` is <<creating-instance, created>> for a <<kafka-streams-internals-StreamThread.adoc#, StreamThread>> for the only purpose of creating the <<kafka-streams-internals-TaskCreator.adoc#storeChangelogReader, TaskCreator>>, the <<kafka-streams-internals-StandbyTaskCreator.adoc#storeChangelogReader, StandbyTaskCreator>> and the <<kafka-streams-internals-TaskManager.adoc#changelogReader, TaskManager>>.
+
+.StoreChangelogReader
+image::images/kafka-streams-StoreChangelogReader.png[align="center"]
+
+`StoreChangelogReader` is used for the following:
+
+* <<kafka-streams-internals-AbstractTask.adoc#, Tasks>> to create a <<kafka-streams-internals-ProcessorStateManager.adoc#, ProcessorStateManager>>
+
+* <<kafka-streams-internals-TaskManager.adoc#, TaskManager>> when <<kafka-streams-internals-TaskManager.adoc#suspendTasksAndState, suspending all (active and standby) tasks and state>> (at the <<kafka-streams-StreamThread-RebalanceListener.adoc#onPartitionsRevoked, beginning of consumer rebalance>>) and <<kafka-streams-internals-TaskManager.adoc#updateNewAndRestoringTasks, updateNewAndRestoringTasks>> (at the <<kafka-streams-StreamThread-RebalanceListener.adoc#onPartitionsAssigned, end of consumer rebalance>>)
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.kafka.streams.processor.internals.StoreChangelogReader` logger to see what happens inside.
+
+Add the following line to `log4j.properties`:
+
+```
+log4j.logger.org.apache.kafka.streams.processor.internals.StoreChangelogReader=ALL
+```
+
+Refer to <<kafka-logging.adoc#log4j.properties, Application Logging Using log4j>>.
+====
+
+=== [[creating-instance]] Creating StoreChangelogReader Instance
+
+`StoreChangelogReader` takes the following to be created:
+
+* [[restoreConsumer]] *Restore Consumer* (`Consumer<byte[], byte[]>`)
+* [[pollTime]] <<POLL_MS_CONFIG, Poll duration>>
+* [[userStateRestoreListener]] <<StateRestoreListener, User-Defined StateRestoreListener>>
+* [[logContext]] `LogContext`
+
+`StoreChangelogReader` initializes the <<internal-properties, internal properties>>.
+
+=== [[POLL_MS_CONFIG]] Poll Duration and StreamsConfig.POLL_MS_CONFIG
+
+When <<creating-instance, created>>, `StoreChangelogReader` is given the <<pollTime, poll duration>> that is configured using <<kafka-streams-StreamsConfig.adoc#POLL_MS_CONFIG, StreamsConfig.POLL_MS_CONFIG>> configuration property.
+
+The <<pollTime, poll duration>> is used exclusively for the <<restoreConsumer, restore Consumer>> to fetch data for changelog partitions (using link:++https://kafka.apache.org/23/javadoc/org/apache/kafka/clients/consumer/Consumer.html#poll-java.time.Duration-++[Consumer.poll]) when <<restore, restoring active StreamTasks (from the changelog partitions)>>.
+
+=== [[StateRestoreListener]] User-Defined StateRestoreListener
+
+When <<creating-instance, created>>, `StoreChangelogReader` is given a <<userStateRestoreListener, user-defined StateRestoreListener>>.
+
+`StoreChangelogReader` uses the <<kafka-streams-StateRestoreListener.adoc#, StateRestoreListener>> exclusively when <<register, registering a StateRestorer for a changelog partition>> so that the <<kafka-streams-internals-StateRestorer.adoc#, StateRestorer>> to be registered is associated with the listener.
+
+=== [[register]] Registering StateRestorer For Changelog Partition -- `register` Method
+
+[source, java]
+----
+void register(StateRestorer restorer)
+----
+
+NOTE: `register` is part of link:kafka-streams-internals-ChangelogReader.adoc#register[ChangelogReader Contract] to register a <<kafka-streams-internals-StateRestorer.adoc#, StateRestorer>> (for a changelog partition).
+
+`register` requests the given `StateRestorer` for the <<kafka-streams-internals-StateRestorer.adoc#partition, partition>>.
+
+If the <<stateRestorers, stateRestorers>> internal registry does not have the partition registered, `register` requests the `StateRestorer` to <<kafka-streams-internals-StateRestorer.adoc#setUserRestoreListener, setUserRestoreListener>> with the <<userStateRestoreListener, userStateRestoreListener>> and adds it to the <<stateRestorers, stateRestorers>> registry. `register` prints out the following TRACE message to the logs:
+
+```
+Added restorer for changelog [partition]
+```
+
+In the end, `register` adds the partition to the <<needsInitializing, needsInitializing>> internal registry.
+
+=== [[reset]] `reset` Method
+
+[source, java]
+----
+void reset()
+----
+
+NOTE: `reset` is part of link:kafka-streams-internals-ChangelogReader.adoc#reset[ChangelogReader Contract] to...FIXME.
+
+`reset`...FIXME
+
+=== [[restoredOffsets]] `restoredOffsets` Method
+
+[source, java]
+----
+Map<TopicPartition, Long> restoredOffsets()
+----
+
+NOTE: `restoredOffsets` is part of <<kafka-streams-internals-ChangelogReader.adoc#restoredOffsets, ChangelogReader Contract>> to restore offsets.
+
+`restoredOffsets` returns pairs of `TopicPartition` and <<kafka-streams-internals-StateRestorer.adoc#restoredOffset, restoredOffset>> (from the associated <<kafka-streams-internals-StateRestorer.adoc#, StateRestorer>> that is <<kafka-streams-internals-StateRestorer.adoc#isPersistent, persistent>> for the <<kafka-streams-internals-StateRestorer.adoc#storeName, state store>> that is <<kafka-streams-StateStore.adoc#persistent, persistent>>).
+
+Internally, for every pair of `TopicPartition` and <<kafka-streams-internals-StateRestorer.adoc#, StateRestorer>> (in the <<stateRestorers, stateRestorers>> internal registry), `restoredOffsets` requests the `StateRestorer` to <<kafka-streams-internals-StateRestorer.adoc#restoredOffset, restoredOffset>> when the restorer is <<kafka-streams-internals-StateRestorer.adoc#isPersistent, persistent>> (i.e. when the <<kafka-streams-internals-StateRestorer.adoc#storeName, associated state store>> is <<kafka-streams-StateStore.adoc#persistent, persistent>>).
+
+=== [[restore]] Restoring Active StreamTasks (From Changelog Partitions) -- `restore` Method
+
+[source, java]
+----
+Collection<TopicPartition> restore(
+  RestoringTasks active)
+----
+
+NOTE: `restore` is part of the <<kafka-streams-internals-ChangelogReader.adoc#restore, ChangelogReader Contract>> to restore logging-enabled <<kafka-streams-StateStore.adoc#, state stores>> using the <<kafka-streams-internals-RestoringTasks.adoc#, RestoringTasks>>.
+
+`restore` <<initialize, initializes>> (with the given active <<kafka-streams-internals-RestoringTasks.adoc#, RestoringTasks>>) when the <<needsInitializing, needsInitializing>> internal registry has at least one changelog partition (that was added when <<register, registering a StateRestorer for a changelog partition>>).
+
+`restore` simply finishes with the <<completed, completely-restored changelog partitions>> when there is no <<needsRestoring, changelog partitions that need restoring>>. `restore` also requests the <<restoreConsumer, restore Consumer>> to unsubscribe from changelog topics (`KafkaConsumer.unsubscribe`).
+
+With at least one <<needsRestoring, changelog partition that needs restoring>>, `restore` requests the <<restoreConsumer, restore Consumer>> to fetch data for the changelog partitions (`KafkaConsumer.poll`) with the <<pollTime, poll duration>>.
+
+`restore`...FIXME
+
+`restore` removes all changelog partitions that are <<completedRestorers, completed>> from the <<needsRestoring, needsRestoring>> internal registry.
+
+In the end, `restore` requests the <<restoreConsumer, restore Consumer>> to unsubscribe from changelog topics (`KafkaConsumer.unsubscribe`) when the <<needsRestoring, needsRestoring>> internal registry has no changelog partition and simply finishes with the <<completed, completely-restored changelog partitions>>.
+
+In case of `InvalidOffsetException`, `restore`...FIXME
+
+==== [[initialize]] `initialize` Internal Method
+
+[source, java]
+----
+void initialize(RestoringTasks active)
+----
+
+`initialize`...FIXME
+
+NOTE: `initialize` is used exclusively when `StateRestorer` is requested to <<restore, restore>> (and there are <<needsInitializing, needsInitializing>> changelog partitions).
+
+==== [[startRestoration]] Restoring State Stores From Changelog Topics -- `startRestoration` Internal Method
+
+[source, java]
+----
+void startRestoration(
+  Set<TopicPartition> initialized,
+  RestoringTasks active)
+----
+
+`startRestoration` prints out the following DEBUG message to the logs:
+
+```
+Start restoring state stores from changelog topics [initialized]
+```
+
+`startRestoration` requests the <<restoreConsumer, restore Consumer>> for partition assignment, adds the `initialized` partitions and finally requests the <<restoreConsumer, restore Consumer>> to use the partitions only (aka _manual partition assignment_).
+
+For every `initialized` partition, `startRestoration` uses the <<stateRestorers, stateRestorers>> internal registry to find the associated `StateRestorer` that is then requested for the <<kafka-streams-internals-StateRestorer.adoc#checkpoint, checkpoint offset>>.
+
+There are two possible cases of the checkpoint offsets.
+
+When the checkpoint offset is <<kafka-streams-internals-StateRestorer.adoc#NO_CHECKPOINT, known>>, `startRestoration` prints out the following TRACE message to the logs:
+
+```
+Found checkpoint [checkpoint] from changelog [partition] for store [storeName].
+```
+
+`startRestoration` requests the <<restoreConsumer, restore Consumer>> to seek (_the fetch offsets_) for the partition to the checkpoint.
+
+`startRestoration` looks up the partition in the <<endOffsets, endOffsets>> internal registry and prints out the following DEBUG message to the logs:
+
+```
+Restoring partition [partition] from offset [startingOffset] to endOffset [endOffset]
+```
+
+`startRestoration` requests the `StateRestorer` to <<kafka-streams-internals-StateRestorer.adoc#setStartingOffset, set the starting offset>> (with the offset of the next record to be fetched for the partition using the <<restoreConsumer, restore Consumer>>).
+
+`startRestoration` requests the `StateRestorer` to <<kafka-streams-internals-StateRestorer.adoc#restoreStarted, restoreStarted>>.
+
+When the checkpoint offset is <<kafka-streams-internals-StateRestorer.adoc#NO_CHECKPOINT, unknown>>, `startRestoration` prints out the following TRACE message to the logs:
+
+```
+Did not find checkpoint from changelog [partition] for store [storeName], rewinding to beginning.
+```
+
+`startRestoration` requests the <<restoreConsumer, restore Consumer>> to seek to the beginning (`KafkaConsumer.seekToBeginning`) for the partition.
+
+`startRestoration` adds the partition to `needsPositionUpdate` local registry.
+
+For every `StateRestorer` in the `startRestoration` local registry (for which the checkpoint offset was unknown), `startRestoration` requests the `StateRestorer` for the <<kafka-streams-internals-StateRestorer.adoc#partition, partition>>.
+
+`startRestoration` requests the given active <<kafka-streams-internals-RestoringTasks.adoc#, RestoringTasks>> for the <<kafka-streams-internals-RestoringTasks.adoc#restoringTaskFor, restoring StreamTask of the changelog partition>>.
+
+There are two possible cases of the restoring <<kafka-streams-internals-StreamTask.adoc#, StreamTask>>.
+
+With <<kafka-streams-internals-AbstractTask.adoc#isEosEnabled, Exactly-Once Support enabled>>, `startRestoration` prints out the following INFO message to the logs:
+
+```
+No checkpoint found for task [id] state store [storeName] changelog [partition] with EOS turned on. Reinitializing the task and restore its state from the beginning.
+```
+
+`startRestoration` removes the partition from the <<needsInitializing, needsInitializing>> internal registry (and the `initialized` local registry).
+
+`startRestoration` requests the `StateRestorer` to <<kafka-streams-internals-StateRestorer.adoc#setCheckpointOffset, set the checkpoint offset>> (with the offset of the next record to be fetched for the partition using the <<restoreConsumer, restore Consumer>>).
+
+`startRestoration` requests the `StreamTask` to <<kafka-streams-internals-AbstractTask.adoc#reinitializeStateStoresForPartitions, reinitializeStateStoresForPartitions>> with the partition.
+
+With <<kafka-streams-internals-AbstractTask.adoc#isEosEnabled, Exactly-Once Support disabled>>, `startRestoration` prints out the following INFO message to the logs:
+
+```
+Restoring task [id]'s state store [storeName] from beginning of the changelog [partition]
+```
+
+`startRestoration` requests the <<restoreConsumer, restore Consumer>> for the offset of the next record to be fetched (_position_) for the partition to the `StateRestorer`.
+
+`startRestoration` looks up the partition of the `StateRestorer` in the <<endOffsets, endOffsets>> internal registry and prints out the following DEBUG message to the logs:
+
+```
+Restoring partition [partition] from offset [position] to endOffset [endOffset]
+```
+
+`startRestoration` requests the `StateRestorer` to <<kafka-streams-internals-StateRestorer.adoc#setStartingOffset, set the starting offset>> to the position (of the <<restoreConsumer, restore Consumer>>).
+
+`startRestoration` requests the `StateRestorer` to <<kafka-streams-internals-StateRestorer.adoc#restoreStarted, restoreStarted>>.
+
+In the end, `startRestoration` adds all `initialized` partitions to the <<needsRestoring, needsRestoring>> internal registry.
+
+NOTE: `startRestoration` is used exclusively when `StoreChangelogReader` is requested to <<initialize, initialize>> (when requested to <<restore, restore>>).
+
+==== [[processNext]] `processNext` Internal Method
+
+[source, java]
+----
+long processNext(
+  List<ConsumerRecord<byte[], byte[]>> records,
+  StateRestorer restorer,
+  Long endOffset)
+----
+
+`processNext`...FIXME
+
+NOTE: `processNext` is used exclusively when `StoreChangelogReader` is requested to <<restore, restore active StreamTasks (from changelog partitions)>>.
+
+=== [[internal-properties]] Internal Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| completedRestorers
+a| [[completedRestorers]][[completed]] Completely-restored changelog partitions (`Set<TopicPartition>`)
+
+| endOffsets
+a| [[endOffsets]]
+
+| needsInitializing
+a| [[needsInitializing]] Changelog partitions (of <<kafka-streams-internals-StateRestorer.adoc#, StateRestorers>>) that need initializing (`Set<TopicPartition>`)
+
+* New changelog partitions added while <<register, registering a new StateRestorer>>
+
+* A changelog partition removed in <<initialize, initialize>> (<<restore, restore>> and <<startRestoration, startRestoration>>)
+
+* All changelog partitions removed in <<reset, reset>>
+
+Used in <<restore, restore>>
+
+| needsRestoring
+a| [[needsRestoring]] Changelog partitions (of <<kafka-streams-internals-StateRestorer.adoc#, StateRestorers>>) that need restoring (`Set<TopicPartition>`)
+
+* New changelog partitions added while <<startRestoration, restoring state stores from their changelog topics>> (while <<initialize, initialize>> while <<restore, restore>>)
+
+* All changelog partitions removed in <<reset, reset>>
+
+Used in <<restore, restore>>
+
+| partitionInfo
+| [[partitionInfo]]
+
+| stateRestorers
+a| [[stateRestorers]] <<kafka-streams-internals-StateRestorer.adoc#, StateRestorers>> per partition of changelog topic of a state store (`Map<TopicPartition, StateRestorer>`)
+
+* New `StateRestorer` added in <<register, register>>
+
+* All `StateRestorers` removed in <<reset, reset>>
+
+Used in <<restore, restore>>, <<initialize, initialize>>, and <<restoredOffsets, restoredOffsets>>
+
+|===

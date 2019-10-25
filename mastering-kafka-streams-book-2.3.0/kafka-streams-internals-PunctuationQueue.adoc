@@ -1,0 +1,33 @@
+== [[PunctuationQueue]] PunctuationQueue
+
+[[pq]]
+`PunctuationQueue` manages a https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/PriorityQueue.html[java.util.PriorityQueue] of <<kafka-streams-PunctuationSchedule.adoc#, PunctuationSchedules>>.
+
+=== [[mayPunctuate]] Attempting to Punctuate -- `mayPunctuate` Method
+
+[source, java]
+----
+boolean mayPunctuate(
+  long timestamp,
+  PunctuationType type,
+  ProcessorNodePunctuator processorNodePunctuator)
+----
+
+`mayPunctuate` takes the <<kafka-streams-PunctuationSchedule.adoc#, PunctuationSchedules>> off the <<pq, PriorityQueue>> for which the <<kafka-streams-Stamped.adoc#timestamp, timestamp>> is older (_smaller_) than the given `timestamp`.
+
+`mayPunctuate` then requests the given <<kafka-streams-internals-ProcessorNodePunctuator.adoc#, ProcessorNodePunctuator>> to <<kafka-streams-internals-ProcessorNodePunctuator.adoc#punctuate, punctuate>> (with the <<kafka-streams-PunctuationSchedule.adoc#node, node>> and the <<kafka-streams-PunctuationSchedule.adoc#punctuator, punctuator>> of every `PunctuationSchedule`, the given `timestamp` and the `PunctuationType`).
+
+In the end, `mayPunctuate` returns whether a `PunctuationSchedule` was punctuated (`true`) or not (`false`).
+
+NOTE: `mayPunctuate` is used when `StreamTask` is requested to attempt to punctuate by <<kafka-streams-internals-StreamTask.adoc#maybePunctuateStreamTime, stream>> and <<kafka-streams-internals-StreamTask.adoc#maybePunctuateSystemTime, system>> time (with itself as the <<kafka-streams-internals-ProcessorNodePunctuator.adoc#, ProcessorNodePunctuator>>).
+
+== [[schedule]] Scheduling Cancellable Periodic Action (Punctuator) -- `schedule` Method
+
+[source, java]
+----
+Cancellable schedule(PunctuationSchedule sched)
+----
+
+`schedule`...FIXME
+
+NOTE: `schedule` is used when...FIXME

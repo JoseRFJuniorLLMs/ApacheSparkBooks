@@ -1,0 +1,217 @@
+== [[SortShuffleManager]] SortShuffleManager -- The Default (And Only) Sort-Based Shuffle System
+
+`SortShuffleManager` is the default and only link:spark-shuffle-ShuffleManager.adoc[ShuffleManager] in Spark with the short name `sort` or `tungsten-sort`.
+
+NOTE: You can use <<spark-configuration-properties.adoc#spark.shuffle.manager, spark.shuffle.manager>> Spark property to activate your own implementation of link:spark-shuffle-ShuffleManager.adoc#contract[ShuffleManager contract].
+
+`SortShuffleManager` is <<creating-instance, created>> when `SparkEnv` is link:spark-SparkEnv.adoc#ShuffleManager[created] (on the driver and executors at the very beginning of a Spark application's lifecycle).
+
+[[MAX_SHUFFLE_OUTPUT_PARTITIONS_FOR_SERIALIZED_MODE]]
+`SortShuffleManager` allows for `(1 << 24)` partition identifiers that can be encoded (i.e. `16777216`).
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.spark.shuffle.sort.SortShuffleManager$` logger to see what happens inside.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.shuffle.sort.SortShuffleManager$=ALL
+```
+
+Refer to <<spark-logging.adoc#, Logging>>.
+====
+
+=== [[unregisterShuffle]] Unregistering Shuffle -- `unregisterShuffle` Method
+
+[source, scala]
+----
+unregisterShuffle(shuffleId: Int): Boolean
+----
+
+NOTE: `unregisterShuffle` is part of the <<spark-shuffle-ShuffleManager.adoc#unregisterShuffle, ShuffleManager Contract>> to unregister a shuffle.
+
+`unregisterShuffle` tries to remove the given `shuffleId` from the <<numMapsForShuffle, numMapsForShuffle>> internal registry.
+
+If the given `shuffleId` was registered, `unregisterShuffle` requests the <<shuffleBlockResolver, IndexShuffleBlockResolver>> to <<spark-shuffle-IndexShuffleBlockResolver.adoc#removeDataByMap, remove the shuffle index and data files>> one by one (up to the number of mappers producing the output for the shuffle).
+
+=== [[creating-instance]] Creating SortShuffleManager Instance
+
+`SortShuffleManager` takes a link:spark-SparkConf.adoc[SparkConf].
+
+`SortShuffleManager` makes sure that <<spark_shuffle_spill, spark.shuffle.spill>> Spark property is enabled. If not you should see the following WARN message in the logs:
+
+```
+WARN SortShuffleManager: spark.shuffle.spill was set to false, but this configuration is ignored as of Spark 1.6+. Shuffle will continue to spill to disk when necessary.
+```
+
+`SortShuffleManager` initializes the <<internal-registries, internal registries and counters>>.
+
+=== [[registerShuffle]] Creating ShuffleHandle (For ShuffleDependency) -- `registerShuffle` Method
+
+[source, scala]
+----
+registerShuffle[K, V, C](
+  shuffleId: Int,
+  numMaps: Int,
+  dependency: ShuffleDependency[K, V, C]): ShuffleHandle
+----
+
+NOTE: `registerShuffle` is part of link:spark-shuffle-ShuffleManager.adoc#contract[ShuffleManager contract].
+
+CAUTION: FIXME Copy the conditions
+
+`registerShuffle` returns a new `ShuffleHandle` that can be one of the following:
+
+1. link:spark-shuffle-BypassMergeSortShuffleHandle.adoc[BypassMergeSortShuffleHandle] (with `ShuffleDependency[K, V, V]`) when <<shouldBypassMergeSort, `shouldBypassMergeSort` condition holds>>.
+
+2. link:spark-shuffle-SerializedShuffleHandle.adoc[SerializedShuffleHandle] (with `ShuffleDependency[K, V, V]`) when <<canUseSerializedShuffle, `canUseSerializedShuffle` condition holds>>.
+
+3. link:spark-shuffle-BaseShuffleHandle.adoc[BaseShuffleHandle]
+
+=== [[getWriter]] Getting ShuffleWriter For ShuffleHandle -- `getWriter` Method
+
+[source, scala]
+----
+getWriter[K, V](
+  handle: ShuffleHandle,
+  mapId: Int,
+  context: TaskContext): ShuffleWriter[K, V]
+----
+
+NOTE: `getWriter` is part of link:spark-shuffle-ShuffleManager.adoc#contract[`ShuffleManager` contract].
+
+Internally, `getWriter` makes sure that a `ShuffleHandle` is associated with its `numMaps` in <<numMapsForShuffle, `numMapsForShuffle` internal registry>>.
+
+CAUTION: FIXME Associated?! What's that?
+
+NOTE: `getWriter` expects that the input `handle` is of type link:spark-shuffle-BaseShuffleHandle.adoc[BaseShuffleHandle] (despite the signature that says that it can work with any `ShuffleHandle`). Moreover, `getWriter` further expects that in 2 (out of 3 cases) the input `handle` is a more specialized link:spark-shuffle-IndexShuffleBlockResolver.adoc[IndexShuffleBlockResolver].
+
+`getWriter` then returns a new `ShuffleWriter` for the input `ShuffleHandle`:
+
+1. link:spark-shuffle-UnsafeShuffleWriter.adoc[UnsafeShuffleWriter] for link:spark-shuffle-SerializedShuffleHandle.adoc[SerializedShuffleHandle].
+
+2. link:spark-shuffle-BypassMergeSortShuffleWriter.adoc[BypassMergeSortShuffleWriter] for link:spark-shuffle-BypassMergeSortShuffleHandle.adoc[BypassMergeSortShuffleHandle].
+
+3. link:spark-shuffle-SortShuffleWriter.adoc[SortShuffleWriter] for link:spark-shuffle-BaseShuffleHandle.adoc[BaseShuffleHandle].
+
+=== [[getReader]] Creating BlockStoreShuffleReader For ShuffleHandle And Reduce Partitions -- `getReader` Method
+
+[source, scala]
+----
+getReader[K, C](
+  handle: ShuffleHandle,
+  startPartition: Int,
+  endPartition: Int,
+  context: TaskContext): ShuffleReader[K, C]
+----
+
+NOTE: `getReader` is part of link:spark-shuffle-ShuffleManager.adoc#getReader[ShuffleManager Contract].
+
+`getReader` returns a new link:spark-shuffle-BlockStoreShuffleReader.adoc[BlockStoreShuffleReader] passing all the input parameters on to it.
+
+NOTE: `getReader` assumes that the input `ShuffleHandle` is of type link:spark-shuffle-BaseShuffleHandle.adoc[BaseShuffleHandle].
+
+=== [[stop]] Stopping SortShuffleManager -- `stop` Method
+
+[source, scala]
+----
+stop(): Unit
+----
+
+NOTE: `stop` is part of link:spark-shuffle-ShuffleManager.adoc#stop[ShuffleManager contract] to stop the shuffle system.
+
+`stop` simply requests the <<shuffleBlockResolver, IndexShuffleBlockResolver>> to <<spark-shuffle-IndexShuffleBlockResolver.adoc#stop, stop>> (which actually does nothing).
+
+=== [[shouldBypassMergeSort]] Considering BypassMergeSortShuffleHandle for ShuffleHandle -- `shouldBypassMergeSort` Method
+
+[source, scala]
+----
+shouldBypassMergeSort(conf: SparkConf, dep: ShuffleDependency[_, _, _]): Boolean
+----
+
+`shouldBypassMergeSort` holds (i.e. is positive) when:
+
+1. The input link:spark-rdd-ShuffleDependency.adoc[ShuffleDependency] has link:spark-rdd-ShuffleDependency.adoc#mapSideCombine[`mapSideCombine` flag enabled] and link:spark-rdd-ShuffleDependency.adoc#aggregator[`aggregator` defined].
+
+2. `mapSideCombine` flag is disabled (i.e. `false`) but the link:spark-rdd-ShuffleDependency.adoc#partitioner[number of partitions (of the `Partitioner` of the input `ShuffleDependency`)] is at most <<spark_shuffle_sort_bypassMergeThreshold, spark.shuffle.sort.bypassMergeThreshold>> Spark property (which defaults to `200`).
+
+Otherwise, `shouldBypassMergeSort` does not hold (i.e. `false`).
+
+NOTE: `shouldBypassMergeSort` is exclusively used when <<registerShuffle, `SortShuffleManager` selects a `ShuffleHandle`>> (for a `ShuffleDependency`).
+
+=== [[canUseSerializedShuffle]] Considering SerializedShuffleHandle for ShuffleHandle -- `canUseSerializedShuffle` Method
+
+[source, scala]
+----
+canUseSerializedShuffle(dependency: ShuffleDependency[_, _, _]): Boolean
+----
+
+`canUseSerializedShuffle` condition holds (i.e. is positive) when all of the following hold (checked in that order):
+
+1. The link:spark-Serializer.adoc#supportsRelocationOfSerializedObjects[`Serializer` of the input `ShuffleDependency` supports relocation of serialized objects].
+
+2. The link:spark-rdd-ShuffleDependency.adoc#aggregator[`Aggregator` of the input `ShuffleDependency` is _not_ defined].
+
+3. The link:spark-rdd-ShuffleDependency.adoc#partitioner[number of shuffle output partitions of the input `ShuffleDependency`] is at most the supported maximum number (which is `(1 << 24) - 1`, i.e. `16777215`).
+
+You should see the following DEBUG message in the logs when `canUseSerializedShuffle` holds:
+
+```
+DEBUG Can use serialized shuffle for shuffle [id]
+```
+
+Otherwise, `canUseSerializedShuffle` does not hold and you should see one of the following DEBUG messages:
+
+```
+DEBUG Can't use serialized shuffle for shuffle [id] because the serializer, [name], does not support object relocation
+
+DEBUG SortShuffleManager: Can't use serialized shuffle for shuffle [id] because an aggregator is defined
+
+DEBUG Can't use serialized shuffle for shuffle [id] because it has more than [number] partitions
+```
+
+NOTE: `canUseSerializedShuffle` is exclusively used when <<registerShuffle, `SortShuffleManager` selects a `ShuffleHandle`>> (for a `ShuffleDependency`).
+
+=== [[settings]] Settings
+
+.Spark Properties
+[cols="1,1,2",options="header",width="100%"]
+|===
+| Spark Property
+| Default Value
+| Description
+
+| [[spark_shuffle_sort_bypassMergeThreshold]] `spark.shuffle.sort.bypassMergeThreshold`
+| `200`
+| The maximum number of reduce partitions below which `SortShuffleManager` avoids merge-sorting data if there is no map-side aggregation either.
+
+| [[spark_shuffle_spill]] `spark.shuffle.spill`
+| `true`
+| No longer in use.
+
+When `false` the following WARN shows in the logs when <<creating-instance, `SortShuffleManager` is created>>:
+
+`WARN SortShuffleManager: spark.shuffle.spill was set to false, but this configuration is ignored as of Spark 1.6+. Shuffle will continue to spill to disk when necessary.`
+
+|===
+
+=== [[internal-properties]] Internal Properties
+
+.SortShuffleManager's Internal Properties (e.g. Registries, Counters and Flags)
+[cols="1m,3",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| numMapsForShuffle
+| [[numMapsForShuffle]] Number of mappers producing the output for a shuffle
+
+| shuffleBlockResolver
+| [[shuffleBlockResolver]] link:spark-shuffle-IndexShuffleBlockResolver.adoc[IndexShuffleBlockResolver] created when <<creating-instance, SortShuffleManager is created>> and used throughout the lifetime of the owning `SortShuffleManager`.
+
+`shuffleBlockResolver` is part of link:spark-shuffle-ShuffleManager.adoc#shuffleBlockResolver[ShuffleManager contract].
+
+Beside the link:spark-shuffle-ShuffleManager.adoc#shuffleBlockResolver[uses due to the contract], `shuffleBlockResolver` is used in `unregisterShuffle` and stopped in `stop`.
+|===

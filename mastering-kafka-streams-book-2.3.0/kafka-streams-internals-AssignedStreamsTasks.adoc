@@ -1,0 +1,321 @@
+== [[AssignedStreamsTasks]] AssignedStreamsTasks -- AssignedTasks For StreamTasks
+
+`AssignedStreamsTasks` is a concrete <<kafka-streams-internals-AssignedTasks.adoc#, AssignedTasks>> of <<kafka-streams-internals-StreamTask.adoc#, StreamTasks>> that...FIXME
+
+`AssignedStreamsTasks` is <<creating-instance, created>> for a <<kafka-streams-internals-StreamThread.adoc#create, StreamThread>> (when `KafkaStreams` is <<kafka-streams-KafkaStreams.adoc#creating-instance, created>>).
+
+`AssignedStreamsTasks` is a `RestoringTasks` that...FIXME
+
+It _appears_ that `AssignedStreamsTasks` simply operates on the running tasks (i.e. the tasks that are in link:kafka-streams-internals-AssignedTasks.adoc#running[running] internal registry). When requested to <<process, process>> or <<punctuate, punctuate>> `AssignedStreamsTasks` simply walks over the `running` internal registry and triggers execution of every task.
+
+[[maybeCommitAction]]
+`AssignedStreamsTasks` uses the *maybeCommit* task action (`TaskAction<StreamTask>`) that is used in <<maybeCommit, maybeCommit>>. The task action takes a <<kafka-streams-internals-StreamTask.adoc#, stream task>> and checks if the task <<kafka-streams-internals-AbstractTask.adoc#commitNeeded, needs a commit>>. If so, the action does the following:
+
+. Increments the <<committed, committed>> internal counter
+
+. Requests the stream task to link:kafka-streams-internals-StreamTask.adoc#commit[commit]
+
+. Prints out the following DEBUG message to the logs:
++
+```
+Committed active task [id] per user request in
+```
+
+[[logContext]]
+[[creating-instance]]
+`AssignedStreamsTasks` takes a `LogContext` when created.
+
+`AssignedStreamsTasks` uses *stream task* for link:kafka-streams-internals-AssignedTasks.adoc#taskTypeName[taskTypeName].
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.kafka.streams.processor.internals.AssignedStreamsTasks` logger to see what happens inside.
+
+Add the following line to `log4j.properties`:
+
+```
+log4j.logger.org.apache.kafka.streams.processor.internals.AssignedStreamsTasks=ALL
+```
+
+Refer to <<kafka-logging.adoc#log4j.properties, Application Logging Using log4j>>.
+====
+
+=== [[process]] Processing Records Using Running Stream Tasks (One Record per Task) -- `process` Method
+
+[source, java]
+----
+int process()
+----
+
+`process` requests every <<kafka-streams-internals-AssignedTasks.adoc#running, running stream task>> (that <<kafka-streams-internals-StreamTask.adoc#isProcessable, is processable>>) to <<kafka-streams-internals-StreamTask.adoc#process, process a single record>>.
+
+In the end, `process` returns how many <<kafka-streams-internals-StreamTask.adoc#, stream tasks>> processed a single record.
+
+NOTE: `process` is used exclusively when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#process, process records by the running stream tasks (one record per task)>>.
+
+==== [[process-TaskMigratedException]] process and TaskMigratedException
+
+In case of a `TaskMigratedException`, `process` prints out the following INFO message to the logs:
+
+```
+Failed to process stream task [id] since it got migrated to another thread already. Closing it as zombie before triggering a new rebalance.
+```
+
+`process` then link:kafka-streams-internals-AssignedTasks.adoc#closeZombieTask[closes the task] (considering the task a zombie). If this reports a `RuntimeException`, `process` re-throws it.
+
+`process` removes the task from link:kafka-streams-internals-AssignedTasks.adoc#running[running] and throws the `TaskMigratedException`.
+
+==== [[process-RuntimeException]] process and RuntimeException
+
+In case of a `RuntimeException`, `process` prints out the following ERROR message to the logs followed by the exception.
+
+```
+Failed to process stream task [id] due to the following error:
+```
+
+`process` re-throws the `RuntimeException`.
+
+=== [[maybeCommit]] Committing Running Stream Tasks that Requested It -- `maybeCommit` Method
+
+[source, java]
+----
+int maybeCommit()
+----
+
+`maybeCommit` resets the <<committed, committed>> internal counter (to `0`) and <<kafka-streams-internals-AssignedTasks.adoc#applyToRunningTasks, executes>> the <<maybeCommitAction, maybeCommitAction>> task action to every <<kafka-streams-internals-AssignedTasks.adoc#running, running task>> (that modifies <<committed, committed>>).
+
+In the end, `maybeCommit` gives the number of running stream tasks that <<kafka-streams-internals-AbstractTask.adoc#commitNeeded, needed a commit>>.
+
+NOTE: `maybeCommit` is used exclusively when `TaskManager` is requested to link:kafka-streams-internals-TaskManager.adoc#maybeCommitActiveTasks[maybeCommitActiveTasks].
+
+=== [[punctuate]] Punctuating Running Stream Tasks (by Stream and System Time) -- `punctuate` Method
+
+[source, java]
+----
+int punctuate()
+----
+
+`punctuate` walks over the <<kafka-streams-internals-AssignedTasks.adoc#running, running stream tasks>> and requests them to attempt to punctuate by <<kafka-streams-internals-StreamTask.adoc#maybePunctuateStreamTime, stream>> and <<kafka-streams-internals-StreamTask.adoc#maybePunctuateSystemTime, system>> time.
+
+For every successfully executed punctuation, `punctuate` increments an internal `punctuated` counter.
+
+In the end, `punctuate` returns the internal `punctuated` counter.
+
+In case of a `TaskMigratedException`, `punctuate` prints out the following INFO message to the logs, <<kafka-streams-internals-AssignedTasks.adoc#closeZombieTask, closes the zombie task>>, and possibly removes the task from the <<kafka-streams-internals-AssignedTasks.adoc#running, running stream tasks>>.
+
+```
+Failed to punctuate stream task [taskId] since it got migrated to another thread already. Closing it as zombie before triggering a new rebalance.
+```
+
+In case of a `KafkaException`, `punctuate` prints out the following ERROR message to the logs and re-throws the exception.
+
+```
+Failed to punctuate stream task [taskId] due to the following error:
+```
+
+NOTE: `punctuate` is used exclusively when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#punctuate, punctuate stream tasks>>.
+
+=== [[updateRestored]] `updateRestored` Method
+
+[source, java]
+----
+void updateRestored(Collection<TopicPartition> restored)
+----
+
+`updateRestored` prints out the following TRACE message to the logs:
+
+```
+Stream task changelog partitions that have completed restoring so far: [restored]
+```
+
+`updateRestored` adds all of the `restored` partitions to the <<restoredPartitions, restoredPartitions>> internal registry unless they are already present.
+
+For every pair (of <<kafka-streams-TaskId.adoc#, TaskId>> and <<kafka-streams-internals-StreamTask.adoc#, StreamTask>>) in the <<restoring, restoring>> internal registry, `updateRestored` requests the <<kafka-streams-internals-AbstractTask.adoc#changelogPartitions, changelog partitions>> of the `StreamTask` and checks whether they are all in the <<restoredPartitions, restoredPartitions>> internal registry or not.
+
+If the <<kafka-streams-internals-AbstractTask.adoc#changelogPartitions, changelog partitions>> are all in the <<restoredPartitions, restoredPartitions>> registry, `updateRestored` <<transitionToRunning, transitionToRunning the task>>, removes the task from the <<restoring, restoring>> registry and then prints out the following TRACE message to the logs:
+
+```
+Stream task [id] completed restoration as all its changelog partitions [changelogPartitions] have been applied to restore state
+```
+
+If the <<kafka-streams-internals-AbstractTask.adoc#changelogPartitions, changelog partitions>> are not all in the <<restoredPartitions, restoredPartitions>> registry, `updateRestored` simply prints out the following TRACE message to the logs:
+
+```
+Stream task [id] cannot resume processing yet since some of its changelog partitions have not completed restoring: [outstandingPartitions]
+```
+
+In the end, `updateRestored` removes all of the elements from the <<restoredPartitions, restoredPartitions>> internal registry when <<allTasksRunning, allTasksRunning>>.
+
+NOTE: `updateRestored` is used exclusively when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#updateNewAndRestoringTasks, updateNewAndRestoringTasks>>.
+
+=== [[addToRestoring]] `addToRestoring` Method
+
+[source, java]
+----
+void addToRestoring(StreamTask task)
+----
+
+`addToRestoring` adds the given <<kafka-streams-internals-StreamTask.adoc#, StreamTask>> to the <<restoring, restoring>> internal registry.
+
+`addToRestoring` adds the <<kafka-streams-internals-AbstractTask.adoc#partitions, partitions>> of the given <<kafka-streams-internals-StreamTask.adoc#, StreamTask>> to the <<restoringByPartition, restoringByPartition>> internal registry.
+
+`addToRestoring` adds the <<kafka-streams-internals-AbstractTask.adoc#changelogPartitions, changelog partitions>> of the given <<kafka-streams-internals-StreamTask.adoc#, StreamTask>> to the <<restoringByPartition, restoringByPartition>> internal registry.
+
+NOTE: `addToRestoring` is used exclusively when `AssignedTasks` is requested to <<kafka-streams-internals-AssignedTasks.adoc#initializeNewTasks, initialize new tasks>> (when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#updateNewAndRestoringTasks, updateNewAndRestoringTasks>>).
+
+=== [[allTasksRunning]] Checking Whether All StreamTasks Are Running -- `allTasksRunning` Method
+
+[source, java]
+----
+boolean allTasksRunning()
+----
+
+NOTE: `allTasksRunning` is part of the <<kafka-streams-internals-AssignedTasks.adoc#allTasksRunning, AssignedTasks Contract>> to check whether all tasks are running or not.
+
+`allTasksRunning` is positive (`true`) when <<kafka-streams-internals-AssignedTasks.adoc#allTasksRunning, all StreamTasks are running>> of the parent `AssignedTasks` and there are no <<restoring, restoring>> tasks. Otherwise, `allTasksRunning` is negative (`false`).
+
+=== [[maybeCommitPerUserRequested]] `maybeCommitPerUserRequested` Method
+
+[source, java]
+----
+int maybeCommitPerUserRequested()
+----
+
+`maybeCommitPerUserRequested` returns how many <<kafka-streams-internals-AssignedTasks.adoc#running, running stream tasks>> have been requested to <<kafka-streams-internals-StreamTask.adoc#commit, commit>>.
+
+Internally, `maybeCommitPerUserRequested` walks over the <<kafka-streams-internals-AssignedTasks.adoc#running, running stream tasks>> and requests them to <<kafka-streams-internals-StreamTask.adoc#commit, commit>> when the commit was <<kafka-streams-internals-StreamTask.adoc#commitRequested, requested>> or <<kafka-streams-internals-AbstractTask.adoc#commitNeeded, needed>>.
+
+For every commit, `maybeCommitPerUserRequested` increments an internal `committed` counter and prints out the following DEBUG message to the logs:
+
+```
+Committed active task [taskId] per user request in
+```
+
+In the end, `maybeCommitPerUserRequested` returns the internal `committed` counter.
+
+In case of a `TaskMigratedException`, `maybeCommitPerUserRequested` prints out the following INFO message to the logs, <<kafka-streams-internals-AssignedTasks.adoc#closeZombieTask, closes the zombie task>>, and possibly removes the task from the <<kafka-streams-internals-AssignedTasks.adoc#running, running stream tasks>>.
+
+```
+Failed to commit [taskId] since it got migrated to another thread already. Closing it as zombie before triggering a new rebalance.
+```
+
+In case of a `RuntimeException`, `maybeCommitPerUserRequested` prints out the following ERROR message to the logs and re-throws the exception.
+
+```
+Failed to commit StreamTask [taskId] due to the following error:
+```
+
+NOTE: `maybeCommitPerUserRequested` is used exclusively when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#maybeCommitActiveTasksPerUserRequested, maybeCommitActiveTasksPerUserRequested>>.
+
+=== [[recordsToDelete]] Purgable Offsets of Repartition Topics (of Topology) -- `recordsToDelete` Method
+
+[source, java]
+----
+Map<TopicPartition, Long> recordsToDelete()
+----
+
+`recordsToDelete` simply requests all the <<running, running StreamTasks>> for the <<kafka-streams-internals-StreamTask.adoc#purgableOffsets, purgable offsets of the repartition topics (of a topology)>>.
+
+NOTE: `recordsToDelete` is used exclusively when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#maybePurgeCommitedRecords, attempt to purge (delete) committed records>>.
+
+=== [[closeAllRestoringTasks]] `closeAllRestoringTasks` Method
+
+[source, java]
+----
+RuntimeException closeAllRestoringTasks()
+----
+
+`closeAllRestoringTasks`...FIXME
+
+NOTE: `closeAllRestoringTasks` is used exclusively when `TaskManager` is requested to <<kafka-streams-internals-TaskManager.adoc#suspendTasksAndState, suspend all (active and standby) stream tasks and state>>.
+
+=== [[clear]] `clear` Method
+
+[source, java]
+----
+void clear()
+----
+
+`clear` requests the parent `AssignedTasks` to <<kafka-streams-internals-AssignedTasks.adoc#clear, clear>>.
+
+In the end, `clear` clears up (removes all elements from) the <<restoring, restoring>>, <<restoringByPartition, restoringByPartition>>, and <<restoredPartitions, restoredPartitions>> internal registries.
+
+NOTE: `clear` is used exclusively when `AssignedTasks` is requested to <<kafka-streams-internals-AssignedTasks.adoc#close, close>>.
+
+=== [[toString]] Describing Itself (Textual Representation) -- `toString` Method
+
+[source, java]
+----
+String toString(String indent)
+----
+
+NOTE: `toString` is part of the <<kafka-streams-internals-AssignedTasks.adoc#toString, AssignedTasks Contract>> to describe itself.
+
+`toString` requests the parent `AssignedTasks` to <<kafka-streams-internals-AssignedTasks.adoc#toString, describe itself>> and then <<kafka-streams-internals-AssignedTasks.adoc#describe, describe>> (with the <<kafka-streams-internals-StreamTask.adoc#, StreamTasks>> from the <<restoring, restoring>> registry and `Restoring:` name).
+
+[source, scala]
+----
+FIXME toString in action
+----
+
+=== [[allTasks]] `allTasks` Method
+
+[source, java]
+----
+List<StreamTask> allTasks()
+----
+
+NOTE: `allTasks` is part of the <<kafka-streams-internals-AssignedTasks.adoc#allTasks, AssignedTasks Contract>> to get all <<kafka-streams-internals-AbstractTask.adoc#, stream processor tasks>>.
+
+`allTasks` requests the parent `AssignedTasks` for the <<kafka-streams-internals-AssignedTasks.adoc#allTasks, all tasks>> and then adds the <<restoring, restoring>> tasks.
+
+=== [[allAssignedTaskIds]] `allAssignedTaskIds` Method
+
+[source, java]
+----
+Set<TaskId> allAssignedTaskIds()
+----
+
+NOTE: `allAssignedTaskIds` is part of the <<kafka-streams-internals-AssignedTasks.adoc#allAssignedTaskIds, AssignedTasks Contract>> to get all assigned <<kafka-streams-TaskId.adoc#, TaskIds>>.
+
+`allAssignedTaskIds` requests the parent `AssignedTasks` for the <<kafka-streams-internals-AssignedTasks.adoc#allAssignedTaskIds, assigned task IDs>> and then adds the <<restoring, restoring>> task IDs.
+
+=== [[internal-properties]] Internal Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| committed
+a| [[committed]] Number of...FIXME
+
+| log
+a| [[log]]
+
+| restoredPartitions
+a| [[restoredPartitions]] *Restored partitions* (`Set<TopicPartition>`)
+
+* New partitions added in <<updateRestored, updateRestored>>
+
+* Partitions are removed in <<updateRestored, updateRestored>> (when...FIXME)
+
+* Cleared up (all partitions removed) in <<closeAllRestoringTasks, closeAllRestoringTasks>>, <<clear, clear>> and in <<updateRestored, updateRestored>> (when <<allTasksRunning, allTasksRunning>>)
+
+| restoring
+a| [[restoring]] Lookup table of <<kafka-streams-internals-StreamTask.adoc#, StreamTasks>> by <<kafka-streams-TaskId.adoc#, TaskId>> (`Map<TaskId, StreamTask>`)
+
+* Entries added in <<addToRestoring, addToRestoring>>
+
+* Entries removed in <<updateRestored, updateRestored>>
+
+* Cleared up (all mappings removed) in <<closeAllRestoringTasks, closeAllRestoringTasks>>, <<clear, clear>>
+
+* Printed out in <<toString, toString>>
+
+Used in <<allTasks, allTasks>>, <<allTasksRunning, allTasksRunning>>, <<closeAllRestoringTasks, closeAllRestoringTasks>>, <<allAssignedTaskIds, allAssignedTaskIds>>
+
+| restoringByPartition
+a| [[restoringByPartition]]
+|===

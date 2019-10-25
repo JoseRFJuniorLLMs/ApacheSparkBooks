@@ -1,0 +1,173 @@
+== [[StandbyTask]] StandbyTask
+
+`StandbyTask` is a concrete link:kafka-streams-internals-AbstractTask.adoc[processor task] that...FIXME
+
+`StandbyTask` is <<creating-instance, created>> when...FIXME
+
+`StandbyTask` is a concrete <<kafka-streams-internals-AbstractTask.adoc#, AbstractTask>> with <<kafka-streams-internals-AbstractTask.adoc#isStandby, isStandby>> flag on.
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.kafka.streams.processor.internals.StandbyTask` logger to see what happens inside.
+
+Add the following line to `log4j.properties`:
+
+```
+log4j.logger.org.apache.kafka.streams.processor.internals.StandbyTask=ALL
+```
+
+Refer to <<kafka-logging.adoc#log4j.properties, Application Logging Using log4j>>.
+====
+
+=== [[closeSuspended]] `closeSuspended` Method
+
+[source, java]
+----
+void closeSuspended(
+  final boolean clean,
+  final boolean isZombie,
+  final RuntimeException e)
+----
+
+NOTE: `closeSuspended` is part of link:kafka-streams-internals-Task.adoc#closeSuspended[Task Contract] to...FIXME.
+
+`closeSuspended`...FIXME
+
+=== [[initializeStateStores]] Initializing State Stores -- `initializeStateStores` Method
+
+[source, java]
+----
+boolean initializeStateStores()
+----
+
+NOTE: `initializeStateStores` is part of <<kafka-streams-internals-Task.adoc#initializeStateStores, Task Contract>> to initialize <<kafka-streams-StateStore.adoc#, state stores>>.
+
+`initializeStateStores`...FIXME
+
+=== [[close]] Closing Task -- `close` Method
+
+[source, java]
+----
+void close(
+  final boolean clean,
+  final boolean isZombie)
+----
+
+NOTE: `close` is part of link:kafka-streams-internals-Task.adoc#close[Task Contract] to close the task.
+
+`close` prints out the following DEBUG message to the logs:
+
+```
+Closing
+```
+
+With the input `clean` flag on, `close` <<commit, commit>> followed by link:kafka-streams-internals-AbstractTask.adoc#closeStateManager[closeStateManager] (with `writeCheckpoint` flag on when `clean` was on and <<commit, commit>> was successful).
+
+`close` marks the `StandbyTask` as closed (i.e. sets link:kafka-streams-internals-AbstractTask.adoc#taskClosed[taskClosed] to `true`).
+
+`close` returns immediately if the `StandbyTask` has not been link:kafka-streams-internals-AbstractTask.adoc#taskInitialized[initialized] yet, i.e. when `StandbyTask` has not been requested to link:kafka-streams-internals-StandbyTask.adoc#initializeStateStores[initializeStateStores] yet.
+
+NOTE: The input `isZombie` flag is ignored (and therefore never used) as `StandbyTask` can never be a zombie.
+
+=== [[initializeTopology]] `initializeTopology` Method
+
+[source, java]
+----
+void initializeTopology()
+----
+
+NOTE: `initializeTopology` is part of link:kafka-streams-internals-Task.adoc#initializeTopology[Task Contract] to...FIXME.
+
+`initializeTopology` does nothing (and is simply a _noop_).
+
+=== [[resume]] Resuming Task -- `resume` Method
+
+[source, java]
+----
+void resume()
+----
+
+NOTE: `resume` is part of the <<kafka-streams-internals-Task.adoc#resume, Task Contract>> to...FIXME.
+
+`resume`...FIXME
+
+=== [[creating-instance]] Creating StandbyTask Instance
+
+`StandbyTask` takes the following to be created:
+
+* [[id]] `TaskId`
+* [[partitions]] Assigned Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/common/TopicPartition.html[TopicPartitions]
+* [[topology]] <<kafka-streams-internals-ProcessorTopology.adoc#, ProcessorTopology>>
+* [[consumer]] Kafka https://kafka.apache.org/22/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html[Consumer] (`Consumer<byte[], byte[]>`)
+* [[changelogReader]] <<kafka-streams-internals-ChangelogReader.adoc#, ChangelogReader>>
+* [[config]] <<kafka-streams-StreamsConfig.adoc#, StreamsConfig>>
+* [[metrics]] <<kafka-streams-internals-StreamsMetricsImpl.adoc#, StreamsMetricsImpl>>
+* [[stateDirectory]] <<kafka-streams-internals-StateDirectory.adoc#, StateDirectory>>
+
+`StandbyTask` initializes the <<internal-properties, internal properties>>.
+
+=== [[flushAndCheckpointState]] `flushAndCheckpointState` Internal Method
+
+[source, java]
+----
+void flushAndCheckpointState()
+----
+
+`flushAndCheckpointState`...FIXME
+
+NOTE: `flushAndCheckpointState` is used when `StandbyTask` is requested to <<commit, commit>> and <<suspend, suspend>>.
+
+=== [[commit]] `commit` Method
+
+[source, java]
+----
+void commit()
+----
+
+NOTE: `commit` is part of <<kafka-streams-internals-Task.adoc#commit, Task Contract>> to...FIXME
+
+`commit`...FIXME
+
+=== [[suspend]] `suspend` Method
+
+[source, java]
+----
+void suspend()
+----
+
+NOTE: `suspend` is part of <<kafka-streams-internals-Task.adoc#suspend, Task Contract>> to...FIXME
+
+`suspend`...FIXME
+
+=== [[update]] Updating Standby Replicas Of State Store (From Single Change Log Partition) -- `update` Method
+
+[source, java]
+----
+List<ConsumerRecord<byte[], byte[]>> update(
+  final TopicPartition partition,
+  final List<ConsumerRecord<byte[], byte[]>> records)
+----
+
+`update` prints out the following TRACE message to the logs:
+
+```
+Updating standby replicas of its state store for partition [partition]
+```
+
+`update` then simply requests the <<stateMgr, ProcessorStateManager>> to <<kafka-streams-internals-ProcessorStateManager.adoc#updateStandbyStates, updateStandbyStates>> and returns the result.
+
+NOTE: `update` is used exclusively when `StreamThread` is requested to <<kafka-streams-internals-StreamThread.adoc#maybeUpdateStandbyTasks, maybeUpdateStandbyTasks>>.
+
+=== [[internal-properties]] Internal Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| processorContext
+| [[processorContext]] <<kafka-streams-internals-InternalProcessorContext.adoc#, InternalProcessorContext>>
+
+Used when...FIXME
+|===

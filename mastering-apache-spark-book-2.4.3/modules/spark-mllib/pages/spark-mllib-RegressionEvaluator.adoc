@@ -1,0 +1,124 @@
+== [[RegressionEvaluator]] RegressionEvaluator -- Evaluator of Regression Models
+
+`RegressionEvaluator` is an link:spark-mllib-Evaluator.adoc[Evaluator] of regression models (e.g. link:spark-mllib-ALS.adoc[ALS], `DecisionTreeRegressor`, link:spark-mllib-DecisionTreeClassifier.adoc[DecisionTreeClassifier], `GBTRegressor`, `GBTClassifier`, link:spark-mllib-RandomForestRegressor.adoc[RandomForestRegressor], link:spark-mllib-RandomForestClassifier.adoc[RandomForestClassifier], link:spark-mllib-LinearRegression.adoc[LinearRegression], `RFormula`, `NaiveBayes`, link:spark-mllib-LogisticRegression.adoc[LogisticRegression], `MultilayerPerceptronClassifier`, `LinearSVC`, link:spark-mllib-GeneralizedLinearRegression.adoc[GeneralizedLinearRegression]).
+
+[[isLargerBetter]]
+.RegressionEvaluator's Metrics and isLargerBetter Flag
+[cols="1,2,1",options="header",width="100%"]
+|===
+| Metric
+| Description
+| isLargerBetter
+
+| `rmse`
+| Root mean squared error
+| `false`
+
+| `mse`
+| Mean squared error
+| `false`
+
+| `r2`
+a|
+
+* (default) http://en.wikipedia.org/wiki/Coefficient_of_determination[Unadjusted coefficient of determination]
+* https://online.stat.psu.edu/~ajw13/stat501/SpecialTopics/Reg_thru_origin.pdf[Regression through the origin]
+
+| `true`
+
+| `mae`
+| Mean absolute error
+| `false`
+|===
+
+```
+import org.apache.spark.ml.evaluation.RegressionEvaluator
+val regEval = new RegressionEvaluator().
+  setMetricName("r2").
+  setPredictionCol("prediction").
+  setLabelCol("label")
+
+scala> regEval.isLargerBetter
+res0: Boolean = true
+
+scala> println(regEval.explainParams)
+labelCol: label column name (default: label, current: label)
+metricName: metric name in evaluation (mse|rmse|r2|mae) (default: rmse, current: r2)
+predictionCol: prediction column name (default: prediction, current: prediction)
+```
+
+[[parameters]]
+.RegressionEvaluator' Parameters
+[cols="1,1,2",options="header",width="100%"]
+|===
+| Parameter
+| Default Value
+| Description
+
+| [[metricName]] `metricName`
+| `areaUnderROC`
+a| Name of the classification metric for evaluation
+
+Can be one of the following: `mae`, `mse`, `rmse` (default), `r2`
+
+| [[predictionCol]] `predictionCol`
+| `prediction`
+| Name of the column with predictions
+
+| [[labelCol]] `labelCol`
+| `label`
+| Name of the column with indexed labels
+|===
+
+[source,scala]
+----
+// prepare a fake input dataset using transformers
+import org.apache.spark.ml.feature.Tokenizer
+val tok = new Tokenizer().setInputCol("text")
+
+import org.apache.spark.ml.feature.HashingTF
+val hashTF = new HashingTF()
+  .setInputCol(tok.getOutputCol)  // it reads the output of tok
+  .setOutputCol("features")
+
+// Scala trick to chain transform methods
+// It's of little to no use since we've got Pipelines
+// Just to have it as an alternative
+val transform = (tok.transform _).andThen(hashTF.transform _)
+
+val dataset = Seq((0, "hello world", 0.0)).toDF("id", "text", "label")
+
+// we're using Linear Regression algorithm
+import org.apache.spark.ml.regression.LinearRegression
+val lr = new LinearRegression
+
+import org.apache.spark.ml.Pipeline
+val pipeline = new Pipeline().setStages(Array(tok, hashTF, lr))
+
+val model = pipeline.fit(dataset)
+
+// Let's do prediction
+// Note that we're using the same dataset as for fitting the model
+// Something you'd definitely not be doing in prod
+val predictions = model.transform(dataset)
+
+// Now we're ready to evaluate the model
+// Evaluator works on datasets with predictions
+
+import org.apache.spark.ml.evaluation.RegressionEvaluator
+val regEval = new RegressionEvaluator
+
+scala> regEval.evaluate(predictions)
+res0: Double = 0.0
+----
+
+=== [[evaluate]] Evaluating Model Output -- `evaluate` Method
+
+[source, scala]
+----
+evaluate(dataset: Dataset[_]): Double
+----
+
+NOTE: `evaluate` is part of link:spark-mllib-Evaluator.adoc#evaluate[Evaluator Contract].
+
+`evaluate`...FIXME

@@ -1,0 +1,35 @@
+== [[ExternalShuffleClient]] ExternalShuffleClient
+
+`ExternalShuffleClient` is a link:spark-ShuffleClient.adoc[ShuffleClient] that...FIXME
+
+=== [[registerWithShuffleServer]] Register Block Manager with Shuffle Server -- `registerWithShuffleServer` Method
+
+[source, java]
+----
+void registerWithShuffleServer(
+  String host,
+  int port,
+  String execId,
+  ExecutorShuffleInfo executorInfo) throws IOException, InterruptedException
+----
+
+`registerWithShuffleServer`...FIXME
+
+NOTE: `registerWithShuffleServer` is used when...FIXME
+
+=== [[fetchBlocks]] `fetchBlocks` Method
+
+[source, java]
+----
+void fetchBlocks(
+  String host,
+  int port,
+  String execId,
+  String[] blockIds,
+  BlockFetchingListener listener,
+  TempFileManager tempFileManager)
+----
+
+NOTE: `fetchBlocks` is part of link:spark-ShuffleClient.adoc#fetchBlocks[ShuffleClient Contract] to...FIXME.
+
+`fetchBlocks`...FIXME

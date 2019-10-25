@@ -1,0 +1,66 @@
+== [[HiveUtils]] HiveUtils
+
+`HiveUtils` is used to create a <<newClientForMetadata, HiveClientImpl>> that link:spark-sql-HiveExternalCatalog.adoc#client[HiveExternalCatalog] uses to interact with a Hive metastore.
+
+[[logging]]
+[TIP]
+====
+Enable `INFO` logging level for `org.apache.spark.sql.hive.HiveUtils` logger to see what happens inside.
+
+Add the following line to `conf/log4j.properties`:
+
+```
+log4j.logger.org.apache.spark.sql.hive.HiveUtils=INFO
+```
+
+Refer to link:spark-logging.adoc[Logging].
+====
+
+=== [[newClientForMetadata]] Creating HiveClientImpl -- `newClientForMetadata` Method
+
+[source, scala]
+----
+newClientForMetadata(
+  conf: SparkConf,
+  hadoopConf: Configuration): HiveClient  // <1>
+newClientForMetadata(
+  conf: SparkConf,
+  hadoopConf: Configuration,
+  configurations: Map[String, String]): HiveClient
+----
+<1> Executes the other `newClientForMetadata` with time configurations formatted
+
+Internally, `newClientForMetadata` creates a new link:spark-sql-SQLConf.adoc[SQLConf] with *spark.sql* properties only (from the input `SparkConf`).
+
+`newClientForMetadata` then creates a `IsolatedClientLoader` per the input parameters and the following configuration properties:
+
+* link:spark-sql-properties.adoc#spark.sql.hive.metastore.version[spark.sql.hive.metastore.version]
+
+* link:spark-sql-properties.adoc#spark.sql.hive.metastore.jars[spark.sql.hive.metastore.jars]
+
+* link:spark-sql-properties.adoc#spark.sql.hive.metastore.sharedPrefixes[spark.sql.hive.metastore.sharedPrefixes]
+
+* link:spark-sql-properties.adoc#spark.sql.hive.metastore.barrierPrefixes[spark.sql.hive.metastore.barrierPrefixes]
+
+You should see one of the following INFO messages in the logs:
+
+```
+Initializing HiveMetastoreConnection version [hiveMetastoreVersion] using Spark classes.
+Initializing HiveMetastoreConnection version [hiveMetastoreVersion] using maven.
+Initializing HiveMetastoreConnection version [hiveMetastoreVersion] using [jars]
+```
+
+In the end, `newClientForMetadata` requests the `IsolatedClientLoader` to create a link:spark-sql-HiveClientImpl.adoc#creating-instance[HiveClientImpl].
+
+NOTE: `newClientForMetadata` is used exclusively when `HiveExternalCatalog` is requested for a link:spark-sql-HiveExternalCatalog.adoc#client[HiveClient].
+
+=== [[inferSchema]] `inferSchema` Method
+
+[source, scala]
+----
+inferSchema(table: CatalogTable): CatalogTable
+----
+
+`inferSchema`...FIXME
+
+NOTE: `inferSchema` is used when...FIXME

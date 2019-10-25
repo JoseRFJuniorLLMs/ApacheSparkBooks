@@ -1,0 +1,185 @@
+== [[ThreadCache]] ThreadCache
+
+`ThreadCache` is a <<caches, collection of NamedCaches>> per <<nameSpaceFromTaskIdAndStore, task ID and state store with caching enabled>>.
+
+`ThreadCache` is <<creating-instance, created>> when:
+
+* `GlobalStreamThread` is <<kafka-streams-internals-GlobalStreamThread.adoc#, created>>
+
+* `StreamThread` is <<kafka-streams-internals-StreamThread.adoc#, created>> (to create a <<kafka-streams-internals-TaskCreator.adoc#, TaskCreator>>)
+
+* `StandbyContextImpl` is <<kafka-streams-internals-StandbyContextImpl.adoc#, created>>
+
+[[logging]]
+[TIP]
+====
+Enable `ALL` logging level for `org.apache.kafka.streams.state.internals.ThreadCache` logger to see what happens inside.
+
+Add the following line to `log4j.properties`:
+
+```
+log4j.logger.org.apache.kafka.streams.state.internals.ThreadCache=ALL
+```
+
+Refer to <<kafka-logging.adoc#log4j.properties, Application Logging Using log4j>>.
+====
+
+=== [[creating-instance]] Creating ThreadCache Instance
+
+`ThreadCache` takes the following to be created:
+
+* [[logContext]] `LogContext`
+* [[maxCacheSizeBytes]] `maxCacheSizeBytes`
+* [[metrics]] <<kafka-streams-internals-StreamsMetricsImpl.adoc#, StreamsMetricsImpl>>
+
+`ThreadCache` initializes the <<internal-properties, internal properties>>.
+
+=== [[CACHE_MAX_BYTES_BUFFERING_CONFIG]] StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG Configuration Property
+
+When <<creating-instance, created>>, `ThreadCache` is given the <<maxCacheSizeBytes, maxCacheSizeBytes>> that is configured using <<kafka-streams-StreamsConfig.adoc#CACHE_MAX_BYTES_BUFFERING_CONFIG, StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG>> configuration property.
+
+The <<maxCacheSizeBytes, maxCacheSizeBytes>> is used when `ThreadCache` is requested to <<maybeEvict, maybeEvict>> (when requested to <<put, put>> and <<putIfAbsent, putIfAbsent>>).
+
+=== [[nameSpaceFromTaskIdAndStore]] Building Cache Namespace -- `nameSpaceFromTaskIdAndStore` Static Method
+
+[source, java]
+----
+String nameSpaceFromTaskIdAndStore(
+  String taskIDString,
+  String underlyingStoreName)
+----
+
+`nameSpaceFromTaskIdAndStore` builds a cache namespace to be of the format:
+
+```
+[taskIDString]-[underlyingStoreName]
+```
+
+NOTE: `nameSpaceFromTaskIdAndStore` is used exclusively when `CachingKeyValueStore` is requested to <<kafka-streams-internals-CachingKeyValueStore.adoc#init, initialize>> (via <<kafka-streams-internals-CachingKeyValueStore.adoc#initInternal, initInternal>>).
+
+=== [[addDirtyEntryFlushListener]] Registering DirtyEntryFlushListener For Namespace -- `addDirtyEntryFlushListener` Method
+
+[source, java]
+----
+void addDirtyEntryFlushListener(
+  String namespace,
+  DirtyEntryFlushListener listener)
+----
+
+`addDirtyEntryFlushListener` <<getOrCreateCache, gets or creates a new named cache>> (by the namespace) and requests it to <<kafka-streams-internals-NamedCache.adoc#setListener, set the flush listener>> with the `DirtyEntryFlushListener`.
+
+NOTE: `addDirtyEntryFlushListener` is used when the <<kafka-streams-internals-AbstractStoreBuilder.adoc#withCachingEnabled, state stores with caching enabled>> (i.e. <<kafka-streams-internals-CachingKeyValueStore.adoc#initInternal, CachingKeyValueStore>>, <<kafka-streams-internals-CachingSessionStore.adoc#initInternal, CachingSessionStore>>, and <<kafka-streams-internals-CachingWindowStore.adoc#initInternal, CachingWindowStore>>) are requested to initialize.
+
+=== [[close]] Closing NamedCache by Namespace -- `close` Method
+
+[source, java]
+----
+void close(String namespace)
+----
+
+`close`...FIXME
+
+NOTE: `close` is used when...FIXME
+
+=== [[put]] Putting Key And Value Into Namespace -- `put` Method
+
+[source, java]
+----
+void put(
+  String namespace,
+  Bytes key,
+  LRUCacheEntry value)
+----
+
+`put`...FIXME
+
+NOTE: `put` is used when...FIXME
+
+=== [[putIfAbsent]] `putIfAbsent` Method
+
+[source, java]
+----
+LRUCacheEntry putIfAbsent(
+  String namespace,
+  Bytes key,
+  LRUCacheEntry value)
+----
+
+`putIfAbsent`...FIXME
+
+NOTE: `putIfAbsent` is used when...FIXME
+
+=== [[flush]] `flush` Method
+
+[source, java]
+----
+void flush(String namespace)
+----
+
+`flush`...FIXME
+
+NOTE: `flush` is used when...FIXME
+
+=== [[getOrCreateCache]] Getting Or Creating New Named Cache by Namespace -- `getOrCreateCache` Internal Method
+
+[source, java]
+----
+NamedCache getOrCreateCache(String name)
+----
+
+`getOrCreateCache`...FIXME
+
+NOTE: `getOrCreateCache` is used when `ThreadCache` is requested to <<addDirtyEntryFlushListener, addDirtyEntryFlushListener>>, <<put, put a key and a value into a namespace>>, <<putIfAbsent, putIfAbsent>>, and <<maybeEvict, maybeEvict>>.
+
+=== [[maybeEvict]] `maybeEvict` Internal Method
+
+[source, java]
+----
+void maybeEvict(String namespace)
+----
+
+`maybeEvict`...FIXME
+
+NOTE: `maybeEvict` is used when `ThreadCache` is requested to <<put, put>> and <<putIfAbsent, putIfAbsent>>.
+
+=== [[sizeBytes]] `sizeBytes` Method
+
+[source, java]
+----
+long sizeBytes()
+----
+
+`sizeBytes`...FIXME
+
+In the end, `sizeBytes` prints out the following TRACE message to the logs:
+
+```
+Evicted [numEvicted] entries from cache [namespace]
+```
+
+NOTE: `sizeBytes` is used exclusively when `ThreadCache` is requested to <<maybeEvict, maybeEvict>> (when requested to <<put, put>> and <<putIfAbsent, putIfAbsent>>).
+
+=== [[internal-properties]] Internal Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| caches
+a| [[caches]] Collection of <<kafka-streams-internals-NamedCache.adoc#, NamedCaches>> by namespace (`Map<String, NamedCache>`)
+
+* A new `NamedCache` is added when requested to <<getOrCreateCache, get or create a new NamedCache by namespace>>
+
+* A `NamedCache` is removed in <<close, close>>
+
+Used when...FIXME
+
+| numPuts
+a| [[numPuts]][[puts]] Number of <<put, put>> and <<putIfAbsent, putIfAbsent>>
+
+Default: `0`
+
+Used exclusively in <<flush, flush>> to print the current value with TRACE logging level enabled
+
+|===

@@ -1,0 +1,130 @@
+== Management Scripts for Standalone Workers
+
+`sbin/start-slave.sh` script starts a Spark worker (aka _slave_) on the machine the script is executed on. The script launches <<SPARK_WORKER_INSTANCES, SPARK_WORKER_INSTANCES>> workers (which defaults to `1`).
+
+```
+./sbin/start-slave.sh [masterURL]
+```
+
+The mandatory `masterURL` parameter is of the form `spark://hostname:port`, e.g. `spark://localhost:7077`. It is also possible to specify a comma-separated master URLs of the form `spark://hostname1:port1,hostname2:port2,...` with each element to be `hostname:port`.
+
+Internally, the script starts <<rpcenv, sparkWorker RPC environment>>.
+
+The order of importance of Spark configuration settings is as follows (from least to the most important):
+
+* <<env-vars, System environment variables>>
+* <<command-line-options, Command-line options>>
+* <<spark-properties, Spark properties>>
+
+[[env-vars]]
+.System environment variables
+[cols="1,1,2",options="header",width="100%"]
+|===
+| Name
+| Default
+| Description
+
+| [[SPARK_WORKER_INSTANCES]] `SPARK_WORKER_INSTANCES`
+| `1`
+| The number of worker instances to run on a node
+
+| [[SPARK_WORKER_PORT]] `SPARK_WORKER_PORT`
+|
+| The base port number to listen on for the first worker. If set, subsequent workers will increment this number. If unset, Spark will pick a random port.
+
+| [[SPARK_WORKER_WEBUI_PORT]] `SPARK_WORKER_WEBUI_PORT`
+| `8081`
+| The base port for the web UI of the first worker. Subsequent workers will increment this number. If the port is used, the successive ports are tried until a free one is found.
+
+| [[SPARK_WORKER_CORES]] `SPARK_WORKER_CORES`
+|
+| The number of cores to use by a single executor
+
+| [[SPARK_WORKER_MEMORY]] `SPARK_WORKER_MEMORY`
+| `1G`
+| The amount of memory to use, e.g. `1000M`, `2G`
+
+| [[SPARK_WORKER_DIR]] `SPARK_WORKER_DIR`
+| `$SPARK_HOME/work`
+| The working directory of worker processes, i.e. web UI, the executors and drivers of Spark applications, that includes both logs and scratch space
+|===
+
+The script uses the following helper scripts:
+
+* `sbin/spark-config.sh`
+* `bin/load-spark-env.sh`
+
+=== [[command-line-options]] Command-line Options
+
+You can use the following command-line options:
+
+* `--host` or `-h` sets the hostname to be available under.
+* `--port` or `-p` - command-line version of <<env-vars, SPARK_WORKER_PORT>> environment variable.
+* `--cores` or `-c` (default: the number of processors available to the JVM) - command-line version of <<env-vars, SPARK_WORKER_CORES>> environment variable.
+* `--memory` or `-m` - command-line version of <<env-vars, SPARK_WORKER_MEMORY>> environment variable.
+* [[work-dir]] `--work-dir` or `-d` - command-line version of <<SPARK_WORKER_DIR, SPARK_WORKER_DIR>> environment variable.
+* `--webui-port` - command-line version of <<env-vars, SPARK_WORKER_WEBUI_PORT>> environment variable.
+* `--properties-file` (default: `conf/spark-defaults.conf`) - the path to a custom Spark properties file. Refer to link:spark-properties.adoc#spark-defaults-conf[spark-defaults.conf].
+* `--help`
+
+=== [[spark-properties]] Spark properties
+
+After loading the link:spark-SparkConf.adoc#default-configuration[default SparkConf], if `--properties-file` or `SPARK_WORKER_OPTS` define `spark.worker.ui.port`, the value of the property is used as the port of the worker's web UI.
+
+```
+SPARK_WORKER_OPTS=-Dspark.worker.ui.port=21212 ./sbin/start-slave.sh spark://localhost:7077
+```
+
+or
+
+```
+$ cat worker.properties
+spark.worker.ui.port=33333
+
+$ ./sbin/start-slave.sh spark://localhost:7077 --properties-file worker.properties
+```
+
+=== sbin/spark-daemon.sh
+
+Ultimately, the script calls `sbin/spark-daemon.sh start` to kick off `org.apache.spark.deploy.worker.Worker` with `--webui-port`, `--port` and the master URL.
+
+=== Internals of org.apache.spark.deploy.worker.Worker
+
+Upon starting, a Spark worker creates the link:spark-SparkConf.adoc#default-configuration[default SparkConf].
+
+It parses command-line arguments for the worker using `WorkerArguments` class.
+
+* `SPARK_LOCAL_HOSTNAME` - custom host name
+* `SPARK_LOCAL_IP` - custom IP to use (when `SPARK_LOCAL_HOSTNAME` is not set or hostname resolves to incorrect IP)
+
+It starts link:spark-rpc.adoc[sparkWorker RPC Environment] and waits until the RpcEnv terminates.
+
+=== [[rpcenv]] RPC environment
+
+The `org.apache.spark.deploy.worker.Worker` class starts its own link:spark-rpc.adoc[sparkWorker RPC environment]  with `Worker` endpoint.
+
+=== sbin/start-slaves.sh script starts slave instances
+
+The `./sbin/start-slaves.sh` script starts slave instances on each machine specified in the `conf/slaves` file.
+
+It has support for starting Tachyon using `--with-tachyon` command line option. It assumes `tachyon/bin/tachyon` command be available in Spark's home directory.
+
+The script uses the following helper scripts:
+
+* `sbin/spark-config.sh`
+* `bin/load-spark-env.sh`
+* `conf/spark-env.sh`
+
+The script uses the following environment variables (and sets them when unavailable):
+
+* `SPARK_PREFIX`
+* `SPARK_HOME`
+* `SPARK_CONF_DIR`
+* `SPARK_MASTER_PORT`
+* `SPARK_MASTER_IP`
+
+The following command will launch 3 worker instances on each node. Each worker instance will use two cores.
+
+```
+SPARK_WORKER_INSTANCES=3 SPARK_WORKER_CORES=2 ./sbin/start-slaves.sh
+```

@@ -1,0 +1,89 @@
+== [[ChangeLoggingKeyValueBytesStore]] ChangeLoggingKeyValueBytesStore
+
+[[changeLogger]]
+`ChangeLoggingKeyValueBytesStore` is a concrete <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> of `Bytes` keys and `byte[]` values (i.e. `KeyValueStore<Bytes, byte[]>`) that uses a <<kafka-streams-internals-StoreChangeLogger.adoc#, StoreChangeLogger>> to <<log, log records>>.
+
+`ChangeLoggingKeyValueBytesStore` is also a concrete <<kafka-streams-internals-WrappedStateStore.adoc#, WrappedStateStore>> of <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> of `Bytes` keys and `byte[]` values (i.e. `WrappedStateStore<KeyValueStore<Bytes, byte[]>, byte[], byte[]>`).
+
+`ChangeLoggingKeyValueBytesStore` is <<creating-instance, created>> exclusively when `KeyValueStoreBuilder` is requested to <<kafka-streams-internals-KeyValueStoreBuilder.adoc#maybeWrapLogging, build a KeyValueStore>> with <<kafka-streams-internals-AbstractStoreBuilder.adoc#withLoggingEnabled, logging enabled>>.
+
+[[creating-instance]][[inner]]
+`ChangeLoggingKeyValueBytesStore` takes a single <<kafka-streams-KeyValueStore.adoc#, KeyValueStore>> (_inner state store_) to be created.
+
+=== [[init]] Initializing State Store -- `init` Method
+
+[source, java]
+----
+void init(
+  ProcessorContext context,
+  StateStore root)
+----
+
+NOTE: `init` is part of the <<kafka-streams-StateStore.adoc#init, StateStore Contract>> to initialize the state store.
+
+`init` requests the <<inner, inner KeyValueStore>> to <<kafka-streams-KeyValueStore.adoc#init, initialize>> (with the given <<kafka-streams-ProcessorContext.adoc#, ProcessorContext>> and the root <<kafka-streams-StateStore.adoc#, StateStore>>).
+
+`init` then creates a new `StateSerdes` and <<kafka-streams-internals-StoreChangeLogger.adoc#, StoreChangeLogger>> (for the name of the changelog topic per <<kafka-streams-internals-ProcessorStateManager.adoc#storeChangelogTopic, application ID and store name>>) that is saved as the <<changeLogger, changeLogger>> internal registry.
+
+In the end, `init` registers an eviction listener if the <<inner, inner state store>> is a <<kafka-streams-internals-MemoryLRUCache.adoc#, MemoryLRUCache>> for `setWhenEldestRemoved` to <<log, log removed record>> (with the key evicted to be with `null` value to indicate removal).
+
+=== [[put]] `put` Method
+
+[source, java]
+----
+void put(
+  Bytes key,
+  byte[] value)
+----
+
+NOTE: `put` is part of the <<kafka-streams-StateStore.adoc#put, StateStore Contract>> to...FIXME.
+
+`put`...FIXME
+
+=== [[putIfAbsent]] `putIfAbsent` Method
+
+[source, java]
+----
+byte[] putIfAbsent(
+  Bytes key,
+  byte[] value)
+----
+
+NOTE: `putIfAbsent` is part of the <<kafka-streams-StateStore.adoc#putIfAbsent, StateStore Contract>> to...FIXME.
+
+`putIfAbsent`...FIXME
+
+=== [[putAll]] `putAll` Method
+
+[source, java]
+----
+void putAll(List<KeyValue<Bytes, byte[]>> entries)
+----
+
+NOTE: `putAll` is part of the <<kafka-streams-StateStore.adoc#putAll, StateStore Contract>> to...FIXME.
+
+`putAll`...FIXME
+
+=== [[delete]] `delete` Method
+
+[source, java]
+----
+byte[] delete(Bytes key)
+----
+
+NOTE: `delete` is part of the <<kafka-streams-StateStore.adoc#delete, StateStore Contract>> to...FIXME.
+
+`delete`...FIXME
+
+=== [[log]] Logging Records -- `log` Method
+
+[source, java]
+----
+void log(
+  Bytes key,
+  byte[] value)
+----
+
+`log` simply requests the <<changeLogger, StoreChangeLogger>> to <<kafka-streams-internals-StoreChangeLogger.adoc#logChange, logChange>> with the key and the value.
+
+NOTE: `log` is used when `ChangeLoggingKeyValueBytesStore` is requested to <<init, initialize>>, <<put, put>>, <<putIfAbsent, putIfAbsent>>, <<putAll, putAll>>, and <<delete, delete>>.

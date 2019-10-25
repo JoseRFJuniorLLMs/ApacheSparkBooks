@@ -1,0 +1,62 @@
+== [[StoreChangeLogger]] StoreChangeLogger
+
+`StoreChangeLogger` is <<creating-instance, created>> when the following <<kafka-streams-StateStore.adoc#, state stores>> are requested to initialize:
+
+* <<kafka-streams-internals-ChangeLoggingKeyValueBytesStore.adoc#, ChangeLoggingKeyValueBytesStore>>
+
+* <<kafka-streams-internals-ChangeLoggingSessionBytesStore.adoc#, ChangeLoggingSessionBytesStore>>
+
+* <<kafka-streams-internals-ChangeLoggingWindowBytesStore.adoc#, ChangeLoggingWindowBytesStore>>
+
+=== [[creating-instance]] Creating StoreChangeLogger Instance
+
+`StoreChangeLogger` takes the following to be created:
+
+* [[storeName]] Name of a <<kafka-streams-StateStore.adoc#, state store>>
+* [[context]] <<kafka-streams-ProcessorContext.adoc#, ProcessorContext>>
+* [[partition]] Partition ID
+* [[serialization]] `StateSerdes<K, V>`
+
+`StoreChangeLogger` initializes the <<internal-properties, internal properties>>.
+
+=== [[logChange]] `logChange` Method
+
+[source, java]
+----
+void logChange(K key, V value) // <1>
+void logChange(K key, V value, long timestamp)
+----
+<1> Uses the <<context, ProcessorContext>> for the <<kafka-streams-ProcessorContext.adoc#timestamp, timestamp>>
+
+`logChange` simply requests the <<collector, RecordCollector>> to <<kafka-streams-internals-RecordCollector.adoc#send, send>> the key and the value to the <<topic, topic>> and the <<partition, partition>> (using the <<keySerializer, keySerializer>> and the <<valueSerializer, valueSerializer>>).
+
+[NOTE]
+====
+`logChange` is used when:
+
+* `ChangeLoggingKeyValueBytesStore` is requested to <<kafka-streams-internals-ChangeLoggingKeyValueBytesStore.adoc#log, log>>
+
+* `ChangeLoggingSessionBytesStore` is requested to <<kafka-streams-internals-ChangeLoggingSessionBytesStore.adoc#remove, remove>> and <<kafka-streams-internals-ChangeLoggingSessionBytesStore.adoc#put, put>>
+
+* `ChangeLoggingWindowBytesStore` is requested to <<kafka-streams-internals-ChangeLoggingWindowBytesStore.adoc#log, log>>
+
+* `ChangeLoggingTimestampedKeyValueBytesStore` and `ChangeLoggingTimestampedWindowBytesStore` are requested to `log`
+====
+
+=== [[internal-properties]] Internal Properties
+
+[cols="30m,70",options="header",width="100%"]
+|===
+| Name
+| Description
+
+| collector
+a| [[collector]] <<kafka-streams-internals-RecordCollector.adoc#, RecordCollector>>
+
+Used exclusively when `StoreChangeLogger` is requested to <<logChange, logChange>>.
+
+| topic
+a| [[topic]] The name of the changelog topic (given the <<kafka-streams-internals-ProcessorStateManager.adoc#storeChangelogTopic, application ID and the store name>>)
+
+Used when...FIXME
+|===

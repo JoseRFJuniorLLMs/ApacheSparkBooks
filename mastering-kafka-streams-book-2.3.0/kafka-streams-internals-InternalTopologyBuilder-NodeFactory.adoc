@@ -1,0 +1,61 @@
+== [[NodeFactory]] NodeFactory Contract
+
+`NodeFactory` is the <<contract, abstraction>> of <<implementations, processor node factories>> that can <<build, build>> and <<describe, describe>> a processor node.
+
+`NodeFactory` takes the following to be created:
+
+* [[name]] Name of a processor to be built
+* [[predecessors]] Node predecessors (by their names) that a processor will be a child of
+
+NOTE: `NodeFactory` is a Java private static abstract class of <<kafka-streams-internals-InternalTopologyBuilder.adoc#, InternalTopologyBuilder>> and cannot be <<creating-instance, created>> directly. It is created indirectly for the <<implementations, concrete processor node factories>> and only for and by `InternalTopologyBuilder`.
+
+[[contract]]
+.NodeFactory Contract
+[cols="1m,3",options="header",width="100%"]
+|===
+| Method
+| Description
+
+| build
+a| [[build]]
+
+[source, java]
+----
+ProcessorNode build()
+----
+
+Builds a <<kafka-streams-internals-ProcessorNode.adoc#, processor node>>
+
+Used exclusively when `InternalTopologyBuilder` is requested to <<kafka-streams-internals-InternalTopologyBuilder.adoc#build, build a topology of processor nodes>> (aka _processor topology_)
+
+| describe
+a| [[describe]]
+
+[source, java]
+----
+AbstractNode describe()
+----
+
+Describes a <<kafka-streams-internals-ProcessorNode.adoc#, processor node>> (using <<kafka-streams-internals-InternalTopologyBuilder-AbstractNode.adoc#, AbstractNode>>)
+
+Used exclusively when `InternalTopologyBuilder` is requested to <<kafka-streams-internals-InternalTopologyBuilder.adoc#describeSubtopology, describeSubtopology>> (when requested to <<kafka-streams-internals-InternalTopologyBuilder.adoc#describe, describe a topology>>)
+
+|===
+
+[[implementations]]
+.NodeFactories
+[cols="1,3",options="header",width="100%"]
+|===
+| NodeFactory
+| Description
+
+| <<kafka-streams-internals-InternalTopologyBuilder-ProcessorNodeFactory.adoc#, ProcessorNodeFactory>>
+| [[ProcessorNodeFactory]]
+
+| <<kafka-streams-internals-InternalTopologyBuilder-SinkNodeFactory.adoc#, SinkNodeFactory>>
+| [[SinkNodeFactory]] Factory of <<kafka-streams-internals-SinkNode.adoc#, SinkNodes>>
+
+| <<kafka-streams-internals-InternalTopologyBuilder-SourceNodeFactory.adoc#, SourceNodeFactory>>
+| [[SourceNodeFactory]]
+
+|===

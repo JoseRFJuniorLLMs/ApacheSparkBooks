@@ -1,0 +1,24 @@
+== Estimators -- ML Pipeline Component
+
+An *estimator* is an abstraction of a *learning algorithm* that *fits a model* on a dataset.
+
+NOTE: That was so machine learning to explain an estimator this way, _wasn't it?_  It is that the more I spend time with Pipeline API the often I use the terms and phrases from this space. Sorry.
+
+Technically, an `Estimator` produces a link:spark-mllib-models.adoc[Model] (i.e. a link:spark-mllib-transformers.adoc[Transformer]) for a given `DataFrame` and parameters (as `ParamMap`). It fits a model to the input `DataFrame` and `ParamMap` to produce a `Transformer` (a `Model`) that can calculate predictions for any `DataFrame`-based input datasets.
+
+It is basically a function that maps a `DataFrame` onto a `Model` through `fit` method, i.e. it takes a `DataFrame` and produces a `Transformer` as a `Model`.
+
+```
+estimator: DataFrame =[fit]=> Model
+```
+
+Estimators are instances of http://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.ml.Estimator[org.apache.spark.ml.Estimator] abstract class that comes with `fit` method (with the return type `M` being a `Model`):
+
+[source, scala]
+----
+fit(dataset: DataFrame): M
+----
+
+`Estimator` is a link:spark-mllib-PipelineStage.adoc[PipelineStage] and so it can be a part of a link:spark-mllib-Pipeline.adoc[Pipeline].
+
+NOTE: `Pipeline` considers `Estimator` special and executes `fit` method before `transform` (as for other `Transformer` objects in a pipeline). Consult link:spark-mllib-Pipeline.adoc[Pipeline] document.
